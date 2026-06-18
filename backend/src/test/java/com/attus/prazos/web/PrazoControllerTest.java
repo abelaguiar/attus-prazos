@@ -54,6 +54,20 @@ class PrazoControllerTest {
     }
 
     @Test
+    void deveRejeitarPrazoDuplicadoCom409() throws Exception {
+        String corpo = """
+                {"numeroProcesso":"0001234-56.2026.8.26.0100","descricao":"Contestacao","dataPrazo":"%s"}
+                """.formatted(LocalDate.now().plusDays(30));
+
+        mockMvc.perform(post("/prazos").contentType(MediaType.APPLICATION_JSON).content(corpo))
+                .andExpect(status().isCreated());
+
+        mockMvc.perform(post("/prazos").contentType(MediaType.APPLICATION_JSON).content(corpo))
+                .andExpect(status().isConflict())
+                .andExpect(jsonPath("$.status").value(409));
+    }
+
+    @Test
     void deveRejeitarPrazoInvalidoCom400EDetalheDosCampos() throws Exception {
         String corpo = """
                 {"numeroProcesso":"","descricao":"","dataPrazo":"2020-01-01"}
