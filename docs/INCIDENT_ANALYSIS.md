@@ -96,12 +96,43 @@ Cobertura de teste: `PrazoControllerTest.deveRejeitarPrazoDuplicadoCom409`.
 | Front-end | Desabilitar o botão durante o envio (evita duplo-clique) | ✅ já existente (`PrazoForm`, estado `enviando`) |
 | Observabilidade | Alerta sobre taxa de 5xx e sobre pico de 409 | ⏳ sugerido (futuro) |
 
-## 6. Melhorias futuras
+## 6. Aplicação segura em produção (rollout da constraint)
+
+> ⚠️ **Atenção:** como o incidente indica que **já existem duplicatas gravadas**, criar a
+> constraint diretamente (via `ddl-auto=update` ou um `ALTER TABLE` simples) **falha**: o
+> banco não consegue adicionar um índice único sobre dados que já violam a regra. Por isso,
+> em produção a constraint **não** deve subir pelo `ddl-auto` — ela exige um rollout em etapas:
+
+1. **Saneamento dos dados existentes** — identificar e mesclar/remover as duplicatas antes de
+   aplicar a constraint. Exemplo (mantém a linha de menor `id` de cada grupo duplicado):
+   ```sql
+   DELETE FROM prazo p
+   USING prazo q
+   WHERE p.numero_processo = q.numero_processo
+     AND p.descricao       = q.descricao
+     AND p.data_prazo      = q.data_prazo
+     AND p.id > q.id;
+   ```
+2. **Migração versionada** — aplicar a constraint via **Flyway/Liquibase** (não por `ddl-auto`),
+   em SQL auditável e reversível:
+   ```sql
+   ALTER TABLE prazo
+     ADD CONSTRAINT uk_prazo_processo_descricao_data
+     UNIQUE (numero_processo, descricao, data_prazo);
+   ```
+3. **Ordem de implantação** — rodar (1) e (2) **antes** de subir a nova versão da aplicação,
+   garantindo que o código que retorna 409 só entre em operação com o banco já consistente.
+
+> No projeto, por simplicidade, o schema é gerado pelo Hibernate (`ddl-auto=update`) sobre um
+> H2 em memória que sempre nasce vazio — então o problema acima não se manifesta em dev/teste.
+> O plano acima é o que seria aplicado num banco real com histórico.
+
+## 7. Melhorias futuras
 
 - **Idempotency key:** aceitar um header `Idempotency-Key` no `POST`, de modo que um retry
   com a mesma chave retorne o recurso já criado (200) em vez de 409 — UX mais suave para
   retries legítimos de rede.
-- **Migrações versionadas (Flyway/Liquibase):** hoje o schema é gerado pelo Hibernate
-  (`ddl-auto`). Em produção, a constraint deveria entrar via migração versionada e auditável.
+- **Migrações versionadas (Flyway/Liquibase):** adotar como padrão do projeto (não só para
+  esta constraint), tornando todo o schema versionado e auditável.
 - **Alertas automáticos:** disparar alerta quando a taxa de 5xx ou de 409 ultrapassar um
   limiar, para detectar o problema antes do usuário reportar.
