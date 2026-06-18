@@ -4,10 +4,12 @@ import com.attus.prazos.service.PrazoNaoEncontradoException;
 import jakarta.servlet.http.HttpServletRequest;
 import java.time.Instant;
 import java.util.List;
+import org.hibernate.exception.ConstraintViolationException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.ResponseStatus;
@@ -17,6 +19,8 @@ import org.springframework.web.bind.annotation.RestControllerAdvice;
 public class GlobalExceptionHandler {
 
     private static final Logger log = LoggerFactory.getLogger(GlobalExceptionHandler.class);
+
+    private static final String UK_PRAZO_DUPLICADO = "uk_prazo_processo_descricao_data";
 
     @ExceptionHandler(PrazoNaoEncontradoException.class)
     @ResponseStatus(HttpStatus.NOT_FOUND)
@@ -32,16 +36,42 @@ public class GlobalExceptionHandler {
     }
 
     @ExceptionHandler(DataIntegrityViolationException.class)
-    @ResponseStatus(HttpStatus.CONFLICT)
-    public ApiError handleConflito(DataIntegrityViolationException ex, HttpServletRequest request) {
-        log.warn("Conflito de integridade em {}: prazo duplicado", request.getRequestURI());
-        return new ApiError(
+    public ResponseEntity<ApiError> handleIntegridade(DataIntegrityViolationException ex,
+            HttpServletRequest request) {
+
+        if (violouConstraint(ex, UK_PRAZO_DUPLICADO)) {
+            log.warn("Conflito de integridade em {}: prazo duplicado", request.getRequestURI());
+            ApiError corpo = new ApiError(
+                    Instant.now(),
+                    HttpStatus.CONFLICT.value(),
+                    "Conflict",
+                    "Já existe um prazo com este processo, descrição e data.",
+                    request.getRequestURI(),
+                    List.of());
+            return ResponseEntity.status(HttpStatus.CONFLICT).body(corpo);
+        }
+
+        log.error("Violação de integridade inesperada em {}", request.getRequestURI(), ex);
+        ApiError corpo = new ApiError(
                 Instant.now(),
-                HttpStatus.CONFLICT.value(),
-                "Conflict",
-                "Já existe um prazo com este processo, descrição e data.",
+                HttpStatus.INTERNAL_SERVER_ERROR.value(),
+                "Internal Server Error",
+                "Erro interno no servidor",
                 request.getRequestURI(),
                 List.of());
+        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(corpo);
+    }
+
+    private boolean violouConstraint(DataIntegrityViolationException ex, String nomeConstraint) {
+        Throwable causa = ex.getCause();
+        while (causa != null) {
+            if (causa instanceof ConstraintViolationException cve) {
+                String nome = cve.getConstraintName();
+                return nome != null && nome.toLowerCase().contains(nomeConstraint);
+            }
+            causa = causa.getCause();
+        }
+        return false;
     }
 
     @ExceptionHandler(MethodArgumentNotValidException.class)
