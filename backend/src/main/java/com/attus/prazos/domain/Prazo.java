@@ -1,64 +1,42 @@
 package com.attus.prazos.domain;
 
-import jakarta.persistence.Column;
-import jakarta.persistence.Entity;
-import jakarta.persistence.EnumType;
-import jakarta.persistence.Enumerated;
-import jakarta.persistence.GeneratedValue;
-import jakarta.persistence.GenerationType;
-import jakarta.persistence.Id;
-import jakarta.persistence.Table;
-import jakarta.persistence.UniqueConstraint;
-import jakarta.persistence.Version;
 import java.time.Instant;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 
-@Entity
-@Table(
-        name = "prazo",
-        uniqueConstraints = @UniqueConstraint(
-                name = "uk_prazo_processo_descricao_data",
-                columnNames = {"numero_processo", "descricao", "data_prazo"}))
+/**
+ * Entidade de dominio Prazo — um POJO puro, sem nenhuma dependencia de
+ * framework (JPA, Spring). O mapeamento de banco vive em
+ * infrastructure/persistence/PrazoJpaEntity.
+ */
 public class Prazo {
 
-    @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long id;
-
-    @Column(name = "numero_processo", nullable = false)
+    private final Long id;
     private String numeroProcesso;
-
-    @Column(nullable = false)
     private String descricao;
-
-    @Column(name = "data_prazo", nullable = false)
     private LocalDate dataPrazo;
-
-    /** EnumType.STRING grava "PENDENTE"/"CUMPRIDO" como texto (legivel e seguro a mudancas de ordem). */
-    @Enumerated(EnumType.STRING)
-    @Column(nullable = false)
     private StatusPrazo status;
-
-    @Column(name = "criado_em", nullable = false, updatable = false)
-    private Instant criadoEm;
-
-    @Column(name = "cumprido_em")
+    private final Instant criadoEm;
     private LocalDateTime cumpridoEm;
+    private final Long version;
 
-    @Version
-    private Long version;
-
-    protected Prazo() {
-    }
-
-    /** Construtor de criacao: um prazo nasce sempre PENDENTE e com data de criacao. */
-    public Prazo(String numeroProcesso, String descricao, LocalDate dataPrazo) {
+    /** Reconstrucao a partir da persistencia (usado pelo mapper). */
+    public Prazo(Long id, String numeroProcesso, String descricao, LocalDate dataPrazo,
+            StatusPrazo status, Instant criadoEm, LocalDateTime cumpridoEm, Long version) {
+        this.id = id;
         this.numeroProcesso = numeroProcesso;
         this.descricao = descricao;
         this.dataPrazo = dataPrazo;
-        this.status = StatusPrazo.PENDENTE;
-        this.criadoEm = Instant.now();
+        this.status = status;
+        this.criadoEm = criadoEm;
+        this.cumpridoEm = cumpridoEm;
+        this.version = version;
+    }
+
+    /** Criacao de um novo prazo: nasce PENDENTE, com data de criacao, ainda sem id/version. */
+    public static Prazo novo(String numeroProcesso, String descricao, LocalDate dataPrazo) {
+        return new Prazo(null, numeroProcesso, descricao, dataPrazo,
+                StatusPrazo.PENDENTE, Instant.now(), null, null);
     }
 
     public void marcarComoCumprido() {

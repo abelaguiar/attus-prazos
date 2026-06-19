@@ -1,10 +1,10 @@
-package com.attus.prazos.web;
+package com.attus.prazos.infrastructure.web;
 
+import com.attus.prazos.application.port.in.PrazoUseCase;
 import com.attus.prazos.domain.Prazo;
-import com.attus.prazos.service.PrazoService;
-import com.attus.prazos.web.dto.AtualizarPrazoRequest;
-import com.attus.prazos.web.dto.CriarPrazoRequest;
-import com.attus.prazos.web.dto.PrazoResponse;
+import com.attus.prazos.infrastructure.web.dto.AtualizarPrazoRequest;
+import com.attus.prazos.infrastructure.web.dto.CriarPrazoRequest;
+import com.attus.prazos.infrastructure.web.dto.PrazoResponse;
 import jakarta.validation.Valid;
 import java.util.List;
 import org.springframework.http.HttpStatus;
@@ -22,16 +22,16 @@ import org.springframework.web.bind.annotation.RestController;
 @RequestMapping("/prazos")
 public class PrazoController {
 
-    private final PrazoService service;
+    private final PrazoUseCase useCase;
 
-    public PrazoController(PrazoService service) {
-        this.service = service;
+    public PrazoController(PrazoUseCase useCase) {
+        this.useCase = useCase;
     }
 
     @PostMapping
     @ResponseStatus(HttpStatus.CREATED)
     public PrazoResponse criar(@Valid @RequestBody CriarPrazoRequest request) {
-        Prazo prazo = service.criar(
+        Prazo prazo = useCase.criar(
                 request.numeroProcesso(),
                 request.descricao(),
                 request.dataPrazo());
@@ -40,20 +40,20 @@ public class PrazoController {
 
     @GetMapping
     public List<PrazoResponse> listar() {
-        return service.listar().stream()
+        return useCase.listar().stream()
                 .map(PrazoResponse::from)
                 .toList();
     }
 
     @GetMapping("/{id}")
     public PrazoResponse buscarPorId(@PathVariable Long id) {
-        return PrazoResponse.from(service.buscarPorId(id));
+        return PrazoResponse.from(useCase.buscarPorId(id));
     }
 
     @PutMapping("/{id}")
     public PrazoResponse atualizar(@PathVariable Long id,
             @Valid @RequestBody AtualizarPrazoRequest request) {
-        Prazo prazo = service.atualizar(
+        Prazo prazo = useCase.atualizar(
                 id,
                 request.descricao(),
                 request.dataPrazo(),
@@ -63,6 +63,6 @@ public class PrazoController {
 
     @PatchMapping("/{id}/cumprir")
     public PrazoResponse cumprir(@PathVariable Long id) {
-        return PrazoResponse.from(service.marcarComoCumprido(id));
+        return PrazoResponse.from(useCase.marcarComoCumprido(id));
     }
 }

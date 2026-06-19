@@ -1,4 +1,4 @@
-package com.attus.prazos.web;
+package com.attus.prazos.infrastructure.web;
 
 import java.time.Instant;
 import java.util.List;

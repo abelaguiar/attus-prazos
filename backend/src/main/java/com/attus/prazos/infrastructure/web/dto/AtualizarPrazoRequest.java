@@ -1,4 +1,4 @@
-package com.attus.prazos.web.dto;
+package com.attus.prazos.infrastructure.web.dto;
 
 import jakarta.validation.constraints.FutureOrPresent;
 import jakarta.validation.constraints.NotBlank;

@@ -1,4 +1,4 @@
-package com.attus.prazos.web;
+package com.attus.prazos.infrastructure.web;
 
 import static org.hamcrest.Matchers.hasSize;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
@@ -9,8 +9,9 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
+import com.attus.prazos.application.port.out.PrazoRepositoryPort;
 import com.attus.prazos.domain.Prazo;
-import com.attus.prazos.repository.PrazoRepository;
+import com.attus.prazos.infrastructure.persistence.PrazoJpaRepository;
 import java.time.LocalDate;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -28,7 +29,10 @@ class PrazoControllerTest {
     private WebApplicationContext context;
 
     @Autowired
-    private PrazoRepository repository;
+    private PrazoRepositoryPort repository;
+
+    @Autowired
+    private PrazoJpaRepository jpaRepository;
 
     private MockMvc mockMvc;
 
@@ -37,7 +41,7 @@ class PrazoControllerTest {
         mockMvc = MockMvcBuilders.webAppContextSetup(context)
                 .addFilters(new RequestIdFilter())
                 .build();
-        repository.deleteAll();
+        jpaRepository.deleteAll();
     }
 
     @Test
@@ -88,8 +92,8 @@ class PrazoControllerTest {
 
     @Test
     void deveMarcarPrazoComoCumprido() throws Exception {
-        Prazo prazo = repository.save(
-                new Prazo("0001234-56.2026.8.26.0100", "Contestacao", LocalDate.now().plusDays(10)));
+        Prazo prazo = repository.salvar(
+                Prazo.novo("0001234-56.2026.8.26.0100", "Contestacao", LocalDate.now().plusDays(10)));
 
         mockMvc.perform(patch("/prazos/{id}/cumprir", prazo.getId()))
                 .andExpect(status().isOk())
@@ -99,8 +103,8 @@ class PrazoControllerTest {
 
     @Test
     void deveAtualizarPrazoComVersaoCorreta() throws Exception {
-        Prazo prazo = repository.save(
-                new Prazo("0001234-56.2026.8.26.0100", "Contestacao", LocalDate.now().plusDays(10)));
+        Prazo prazo = repository.salvar(
+                Prazo.novo("0001234-56.2026.8.26.0100", "Contestacao", LocalDate.now().plusDays(10)));
         Long versao = prazo.getVersion();
 
         String corpo = """
@@ -116,20 +120,18 @@ class PrazoControllerTest {
 
     @Test
     void deveRejeitarAtualizacaoComVersaoDesatualizadaCom409() throws Exception {
-        Prazo prazo = repository.save(
-                new Prazo("0001234-56.2026.8.26.0100", "Contestacao", LocalDate.now().plusDays(10)));
+        Prazo prazo = repository.salvar(
+                Prazo.novo("0001234-56.2026.8.26.0100", "Contestacao", LocalDate.now().plusDays(10)));
         Long versaoDesatualizada = prazo.getVersion();
 
         String corpo = """
                 {"descricao":"Apelacao","dataPrazo":"%s","version":%d}
                 """.formatted(LocalDate.now().plusDays(20), versaoDesatualizada);
 
-        // 1a edicao com a versao correta -> OK (a versao do prazo incrementa)
         mockMvc.perform(put("/prazos/{id}", prazo.getId())
                         .contentType(MediaType.APPLICATION_JSON).content(corpo))
                 .andExpect(status().isOk());
 
-        // 2a edicao reusando a versao ja desatualizada -> 409
         mockMvc.perform(put("/prazos/{id}", prazo.getId())
                         .contentType(MediaType.APPLICATION_JSON).content(corpo))
                 .andExpect(status().isConflict())

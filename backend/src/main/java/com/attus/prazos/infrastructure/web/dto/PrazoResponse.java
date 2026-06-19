@@ -1,4 +1,4 @@
-package com.attus.prazos.web.dto;
+package com.attus.prazos.infrastructure.web.dto;
 
 import com.attus.prazos.domain.Prazo;
 import com.attus.prazos.domain.StatusPrazo;
