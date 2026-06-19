@@ -251,7 +251,8 @@ section h2 {
   overflow-x: auto;
 }
 
-.prazo-table {
+/* min-width escopado ao wrapper: forca o scroll horizontal so dentro dele */
+.prazo-table-wrap .prazo-table {
   min-width: 560px;
 }
 
