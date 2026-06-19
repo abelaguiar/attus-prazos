@@ -135,4 +135,23 @@ class PrazoControllerTest {
                 .andExpect(status().isConflict())
                 .andExpect(jsonPath("$.status").value(409));
     }
+
+    @Test
+    void deveExporDocumentacaoOpenApi() throws Exception {
+        mockMvc.perform(get("/v3/api-docs"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.openapi").exists())
+                .andExpect(jsonPath("$['paths']['/prazos'].get").exists())
+                .andExpect(jsonPath("$['paths']['/prazos'].post").exists());
+    }
+
+    @Test
+    void deveExporSwaggerUi() throws Exception {
+        mockMvc.perform(get("/swagger-ui.html"))
+                .andExpect(status().isFound())
+                .andExpect(header().string("Location", "/swagger-ui/index.html"));
+
+        mockMvc.perform(get("/swagger-ui/index.html"))
+                .andExpect(status().isOk());
+    }
 }
