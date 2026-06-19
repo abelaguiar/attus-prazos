@@ -135,4 +135,27 @@ class PrazoControllerTest {
                 .andExpect(status().isConflict())
                 .andExpect(jsonPath("$.status").value(409));
     }
+
+    @Test
+    void deveListarPrazosPaginados() throws Exception {
+        repository.save(new Prazo("0001234-56.2026.8.26.0100", "Contestacao", LocalDate.now().plusDays(5)));
+        repository.save(new Prazo("0001234-56.2026.8.26.0100", "Apelacao", LocalDate.now().plusDays(6)));
+        repository.save(new Prazo("0001234-56.2026.8.26.0100", "Embargos", LocalDate.now().plusDays(7)));
+
+        mockMvc.perform(get("/prazos").param("page", "0").param("size", "2"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.content", hasSize(2)))
+                .andExpect(jsonPath("$.page").value(0))
+                .andExpect(jsonPath("$.size").value(2))
+                .andExpect(jsonPath("$.totalElements").value(3))
+                .andExpect(jsonPath("$.totalPages").value(2))
+                .andExpect(jsonPath("$.last").value(false));
+    }
+
+    @Test
+    void deveRetornar400ParaCampoDeOrdenacaoInvalido() throws Exception {
+        mockMvc.perform(get("/prazos").param("sort", "vencido"))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.status").value(400));
+    }
 }

@@ -246,6 +246,16 @@ section h2 {
   color: var(--muted);
 }
 
+.paginacao {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 1rem;
+  margin-top: 1rem;
+  color: var(--muted);
+  font-size: 0.9rem;
+}
+
 /* Tabela rola horizontalmente em telas estreitas em vez de espremer */
 .prazo-table-wrap {
   overflow-x: auto;

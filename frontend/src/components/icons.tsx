@@ -60,3 +60,19 @@ export function IconX({ size = 16 }: IconProps) {
     </svg>
   );
 }
+
+export function IconChevronLeft({ size = 16 }: IconProps) {
+  return (
+    <svg {...base(size)}>
+      <polyline points="15 18 9 12 15 6" />
+    </svg>
+  );
+}
+
+export function IconChevronRight({ size = 16 }: IconProps) {
+  return (
+    <svg {...base(size)}>
+      <polyline points="9 18 15 12 9 6" />
+    </svg>
+  );
+}
