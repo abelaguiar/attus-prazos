@@ -1,81 +1,87 @@
-# Nota Técnica — Decisões, Trade-offs e Melhorias
+# Nota técnica
 
-Resumo das principais decisões de engenharia do projeto e do raciocínio por trás delas.
+Algumas decisões que tomei no projeto e o motivo de cada uma.
 
-## Decisões e trade-offs
+## Um modelo só (Prazo)
 
-### Domínio enxuto (uma entidade)
-Modelei apenas `Prazo` (sem relacionamentos JPA). O foco do teste é demonstrar um fluxo
-ponta a ponta com qualidade, não a complexidade do modelo. Uma entidade única mantém o código
-fácil de ler, testar e defender, sem perder a riqueza necessária (regra de negócio, validação,
-estado derivado).
-**Trade-off:** menos "vistoso", porém mais sólido e sem over-engineering.
+Modelei apenas `Prazo`, sem relacionamentos. O objetivo do teste é mostrar um fluxo completo
+com qualidade, não um modelo de dados grande, e uma entidade só já dá pra exercitar regra de
+negócio, validação e estado derivado mantendo o código fácil de ler e testar. Fica menos
+"vistoso", mas evita complexidade que o problema não pede.
 
-### "Vencido" é estado derivado, não armazenado
-Um prazo está vencido quando a data passou e ele ainda está `PENDENTE`. Calculo isso em
-tempo de leitura (`Prazo.isVencido()`) em vez de guardar uma coluna `vencido`.
-**Por quê:** uma coluna armazenada exigiria um job atualizando o status diariamente — fonte
-clássica de inconsistência. Derivar elimina essa classe de bug.
+## "Vencido" é calculado
 
-### DTOs separados da entidade
-A API expõe `CriarPrazoRequest`/`PrazoResponse`, não a entidade `Prazo` diretamente.
-**Por quê:** desacopla o contrato HTTP do modelo de persistência; permite controlar o que
-entra/sai e evoluir o banco sem quebrar a API.
+Um prazo está vencido quando a data já passou e ele ainda está `PENDENTE`. Em vez de guardar
+isso numa coluna, calculo na hora da leitura (`Prazo.isVencido()`). Coluna armazenada precisaria
+de um job atualizando o status todo dia, e é fácil esse status ficar desatualizado. Calculando,
+o problema simplesmente não existe.
 
-### Linguagem ubíqua (português no domínio, inglês na infraestrutura)
-Termos de negócio em português (`Prazo`, `numeroProcesso`, `marcarComoCumprido`) porque é a
-linguagem do domínio jurídico; termos técnicos em inglês (`Repository`, `Service`,
-`findAll`) por serem convenção do Spring.
+## DTO em vez da entidade na API
 
-### Tratamento de erro centralizado
-Um `@RestControllerAdvice` global mapeia exceções para respostas consistentes
-(400/404/409/500), mantendo os controllers limpos. O handler de integridade é **específico**:
-só devolve `409` quando a violação é da constraint de duplicidade — outras violações viram
-`500` com log `ERROR`, sem mascarar o erro real.
+A API recebe e devolve DTOs (`CriarPrazoRequest`, `PrazoResponse`), não a entidade. Isso separa
+o contrato HTTP do modelo de banco: dá pra mudar o mapeamento sem quebrar a API e controlar
+exatamente o que entra e sai.
 
-### Logs estruturados (JSON/ECS) com `requestId`
-Logs em JSON no padrão ECS, com um `requestId` por requisição (via MDC, devolvido no header
-`X-Request-Id`). Isso torna os logs pesquisáveis e rastreáveis — e foi o que permitiu a
-análise da Parte 2. Console fica legível; arquivo fica estruturado.
+## Português no domínio, inglês na infra
 
-### Validação em duas camadas
-No front (feedback imediato) e no back (Bean Validation — a que vale). O back nunca confia
-no cliente.
+Os nomes de negócio ficam em português (`Prazo`, `numeroProcesso`, `marcarComoCumprido`) porque
+essa é a língua do domínio jurídico. Os termos técnicos seguem a convenção do Spring em inglês
+(`Repository`, `Service`, `findAll`). É a ideia de linguagem ubíqua: o código fala a língua de
+quem entende do negócio.
 
-### Integridade garantida no banco
-A unicidade de prazo é garantida por uma constraint `UNIQUE` no banco, não por uma checagem
-na aplicação.
-**Por quê:** sob concorrência, um `SELECT` antes do `INSERT` tem condição de corrida; só a
-constraint garante a invariante de fato.
+## Tratamento de erro num lugar só
 
-### Controle de concorrência otimista (edição)
-A edição de prazo usa **trava otimista**: a entidade tem `@Version` e o `PUT /prazos/{id}`
-exige a `version` que o cliente carregou. Se estiver desatualizada, a operação é rejeitada
-com `409` em vez de sobrescrever — previne *lost update*.
-**Por quê otimista (e não pessimista):** conflitos de edição são raros; travar a linha
-(pessimista) penalizaria o caso comum. O otimista assume sucesso e detecta o conflito na
-escrita — escala melhor.
-**Duas camadas:** a checagem explícita da `version` resolve o *read-modify-write* entre
-requisições HTTP separadas (*optimistic offline lock*); o `@Version` cobre a corrida fina no
-banco (`ObjectOptimisticLockingFailureException` → `409`). Detalhes em
-`INCIDENT_ANALYSIS_LOST_UPDATE.md`.
+Um `@RestControllerAdvice` global converte as exceções em respostas 400/404/409/500
+consistentes, o que mantém os controllers limpos. O tratamento de violação de integridade é
+específico: só vira 409 quando é a constraint de duplicidade; qualquer outra violação cai em 500
+com log de erro, para não esconder um problema real atrás de um status enganoso.
 
-### H2 em memória
-Banco em memória para zero fricção de setup (não exige instalar nada).
-**Trade-off:** os dados somem ao reiniciar — aceitável para teste/demo. Em produção, trocar
-por PostgreSQL altera apenas a configuração de datasource.
+## Logs em JSON com requestId
 
-## Melhorias futuras
+Os logs saem em JSON (padrão ECS) com um `requestId` por requisição (via MDC, devolvido no
+header `X-Request-Id`). Isso deixa o log pesquisável e foi o que permitiu fazer a análise da
+Parte 2. No console o formato fica legível; no arquivo, estruturado.
 
-- **PostgreSQL + migrações versionadas (Flyway/Liquibase):** hoje o schema é gerado pelo
-  Hibernate (`ddl-auto`); em produção o schema deveria ser versionado e auditável.
-- **Idempotency key** no `POST /prazos`: retries legítimos de rede retornariam o recurso já
-  criado em vez de `409`.
-- **ETag / If-Match na edição:** expor a `version` como `ETag` e aceitar `If-Match` no `PUT`,
-  padronizando a concorrência otimista via cabeçalhos HTTP em vez de um campo no corpo.
-- **Documentação interativa da API (OpenAPI/Swagger):** complementaria a documentação do README.
-- **Paginação e filtros** em `GET /prazos` (por situação, por vencimento).
-- **Autenticação/autorização** (ex.: por procurador) e auditoria de quem cumpriu cada prazo.
-- **Cálculo de prazo em dias úteis** (feriados forenses) — regra real do domínio jurídico.
-- **Alertas de observabilidade** sobre taxa de 5xx/409 e prazos próximos do vencimento.
-- **Testes end-to-end** no front (ex.: Playwright) cobrindo o fluxo completo na UI.
+## Validação no front e no back
+
+O front valida para dar resposta rápida ao usuário, mas a validação que conta é a do back (Bean
+Validation). O servidor nunca confia no que vem do cliente.
+
+## Unicidade garantida no banco
+
+A regra de "não pode haver prazo duplicado" é uma constraint `UNIQUE` no banco, não um `if` na
+aplicação. Sob concorrência, checar com um `SELECT` antes do `INSERT` tem condição de corrida:
+duas requisições passam pela checagem antes de qualquer uma gravar. Só a constraint garante a
+regra de verdade.
+
+## Concorrência otimista na edição
+
+A edição usa trava otimista. A entidade tem `@Version` e o `PUT` exige a `version` que o cliente
+carregou; se estiver defasada, a operação é recusada com 409 em vez de sobrescrever. Escolhi
+otimista porque conflito de edição é raro — travar a linha (pessimista) penalizaria o caso
+comum, que é não ter conflito nenhum.
+
+São duas camadas com papéis diferentes: a checagem explícita da `version` cobre o caso de dois
+usuários editando em requisições separadas (o read-modify-write), e o `@Version` cobre a corrida
+fina dentro do banco, que vira `ObjectOptimisticLockingFailureException` e também é mapeada para
+409. Os detalhes estão em `INCIDENT_ANALYSIS_LOST_UPDATE.md`.
+
+## H2 em memória
+
+Em dev e nos testes uso H2 em memória, então ninguém precisa instalar banco para rodar o
+projeto. Os dados somem ao reiniciar, o que é aceitável para um teste. Trocar por PostgreSQL é
+só configuração de datasource (é o que o profile `docker` faz).
+
+## O que faria depois
+
+- Migrações versionadas (Flyway ou Liquibase). Hoje o schema é gerado pelo Hibernate
+  (`ddl-auto`); em produção isso precisa ser versionado e auditável.
+- Idempotency key no `POST /prazos`, para um retry de rede devolver o recurso já criado em vez
+  de 409.
+- ETag e `If-Match` na edição, levando a concorrência otimista para os cabeçalhos HTTP em vez de
+  um campo no corpo.
+- OpenAPI/Swagger para documentação interativa da API.
+- Paginação e filtros no `GET /prazos`.
+- Autenticação e auditoria de quem cumpriu cada prazo.
+- Cálculo de prazo em dias úteis, considerando feriados forenses.
+- Testes end-to-end no front (Playwright, por exemplo).

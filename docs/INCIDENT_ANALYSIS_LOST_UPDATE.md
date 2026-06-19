@@ -1,72 +1,67 @@
-# Análise de Incidente — Lost update na edição de prazos (concorrência)
+# Análise de incidente — lost update na edição de prazos
 
-## Resumo (TL;DR)
+## Resumo
 
-Dois procuradores editando o **mesmo prazo** ao mesmo tempo causavam **lost update**:
-a alteração de um era **sobrescrita silenciosamente** pela do outro (que havia carregado uma
-versão antiga do registro). Nenhum erro era gerado — a edição "perdida" simplesmente sumia.
+Dois procuradores editando o mesmo prazo ao mesmo tempo causavam lost update: a alteração de um
+era sobrescrita pela do outro, que tinha carregado uma versão antiga do registro. Não dava erro
+nenhum; a edição perdida só sumia.
 
-A correção (esta PR) introduz **trava otimista**: a entidade `Prazo` ganha `@Version`, e a
-edição passa a exigir a **versão** que o cliente carregou. Se a versão estiver desatualizada,
-a operação é rejeitada com **HTTP 409 Conflict** em vez de gravar por cima.
+A correção introduz trava otimista. A entidade `Prazo` ganhou `@Version`, e a edição passou a
+exigir a versão que o cliente carregou. Se essa versão estiver defasada, a operação é recusada
+com HTTP 409 em vez de gravar por cima.
 
----
+## Sintoma
 
-## 1. Sintoma
+O relato era do tipo "editei a data de um prazo, salvei, e pouco depois minha alteração tinha
+voltado". A alteração de um usuário se perdia sem aviso. Num sistema de prazos processuais isso
+não é pouca coisa: significa trabalhar com uma data errada e, no limite, perder prazo. Acontecia
+sempre que dois usuários editavam o mesmo prazo numa janela de tempo próxima.
 
-- **Reportado:** "editei a data de um prazo, salvei, e pouco depois minha alteração tinha
-  voltado ao valor antigo / virado outra coisa."
-- **Impacto:** alteração de um usuário perdida sem aviso. Num domínio de prazos processuais,
-  isso pode significar trabalhar com uma data errada — risco real de perder prazo.
-- **Frequência:** recorrente quando dois usuários editam o mesmo prazo em janela próxima.
+## O que os logs mostraram
 
-## 2. Evidência nos logs (ANTES)
-
-Reproduzindo: dois usuários carregam o prazo na **versão 0**; A edita para "Apelação"
-(vira versão 1); B, ainda com a versão 0 em tela, edita para "Embargos".
+Reproduzindo: dois usuários carregam o prazo na versão 0. O usuário A edita para "Apelação"
+(o registro vai para a versão 1) e o usuário B, ainda com a versão 0 na tela, edita para
+"Embargos".
 
 ```
 12:37:42.007  [INFO]  Prazo atualizado id=1 versaoCliente=0 versaoAtual=0
 12:37:42.034  [INFO]  Prazo atualizado id=1 versaoCliente=0 versaoAtual=1
 ```
 
-Leitura dos logs (diagnóstico):
+A segunda linha é a pista: o cliente B mandou `versaoCliente=0`, mas o registro já estava em
+`versaoAtual=1`. Ou seja, B editou em cima de uma versão velha e o sistema aceitou assim mesmo.
+As duas requisições entraram como INFO, sem nenhum sinal de erro. No fim, a "Apelação" do A
+desaparece e fica a "Embargos" do B.
 
-| Pista no log | Conclusão |
-|---|---|
-| 2ª linha: `versaoCliente=0` mas `versaoAtual=1` | O cliente B editou baseado numa versão **desatualizada** (a 0), enquanto o registro já estava na 1 |
-| Ambas `INFO`, ambas aceitas | A escrita obsoleta foi **gravada por cima** sem aviso — *lost update* |
-| Resultado | A alteração "Apelação" (de A) **desaparece**; fica "Embargos" (de B) |
+## Causa-raiz
 
-## 3. Causa-raiz
+Faltava controle de concorrência. A edição era um read-modify-write que não verificava se o
+registro tinha mudado entre o momento em que o cliente leu e o momento em que ele gravou. Dois
+clientes que leem a mesma versão e gravam em sequência: o segundo ignora o que o primeiro fez.
+É o caso clássico de lost update.
 
-Falta de **controle de concorrência otimista**. A operação de edição era um
-*read-modify-write* sem verificar se o registro havia mudado entre o "read" do cliente e o
-"write". Dois clientes que leem a mesma versão e escrevem em sequência: o segundo write
-ignora o que o primeiro fez. É o **lost update** clássico.
+## Correção
 
-## 4. Correção aplicada (nesta PR)
+1. `@Version` na entidade `Prazo`. O JPA passa a versionar cada linha e a usar a versão na
+   cláusula do update (`... WHERE id = ? AND version = ?`).
+2. A edição passa a exigir a versão do cliente. O `PUT /prazos/{id}` recebe o campo `version`
+   (o mesmo que veio no `GET`); o serviço compara com a versão atual e, se for diferente, lança
+   `ConflitoDeVersaoException`, que vira 409, sem gravar.
+3. A corrida fina no banco também fica coberta: se duas requisições passarem pela verificação
+   ao mesmo tempo, o `@Version` faz o update de uma delas afetar 0 linhas e o JPA lança
+   `ObjectOptimisticLockingFailureException`, que também é mapeada para 409.
 
-1. **`@Version` na entidade `Prazo`** — o JPA passa a versionar cada linha e a usar a versão
-   na cláusula do `UPDATE` (`... WHERE id = ? AND version = ?`).
-2. **Edição exige a versão do cliente** — `PUT /prazos/{id}` recebe o campo `version` (que o
-   cliente obteve no `GET`). O serviço compara com a versão atual; se diferente, lança
-   `ConflitoDeVersaoException` → **HTTP 409**, sem gravar.
-3. **Proteção também para corrida real no banco** — se duas requisições passarem pela
-   verificação simultaneamente, o `@Version` faz o `UPDATE` de uma delas afetar 0 linhas →
-   `ObjectOptimisticLockingFailureException`, também mapeada para **409**.
+As duas camadas têm papéis diferentes. A checagem explícita da `version` resolve o caso comum,
+que é o read-modify-write entre requisições HTTP separadas. O `@Version` resolve a corrida que
+acontece dentro do banco. Juntas, fecham a brecha.
 
-> Por que as duas camadas? A verificação explícita da `version` resolve o caso comum
-> (read-modify-write entre **requisições HTTP separadas** — *optimistic offline lock*). O
-> `@Version` cobre a corrida fina dentro do banco. Juntas, fecham a janela de lost update.
-
-### Evidência nos logs (DEPOIS)
+Depois da correção, a mesma sequência produz:
 
 ```
 [WARN]  Conflito de versão id=1 versaoCliente=0 versaoAtual=1
 ```
 
-Resposta HTTP da edição com versão desatualizada:
+E a resposta da edição com versão defasada:
 
 ```json
 {
@@ -77,24 +72,27 @@ Resposta HTTP da edição com versão desatualizada:
 }
 ```
 
-A alteração do primeiro usuário é **preservada**. Cobertura de teste:
-`PrazoControllerTest.deveRejeitarAtualizacaoComVersaoDesatualizadaCom409` e
-`deveAtualizarPrazoComVersaoCorreta`.
+A alteração do primeiro usuário é mantida. Os testes que cobrem isso são o
+`deveRejeitarAtualizacaoComVersaoDesatualizadaCom409` e o `deveAtualizarPrazoComVersaoCorreta`,
+no `PrazoControllerTest`.
 
-## 5. Prevenção (defesa em camadas)
+## Prevenção
 
-| Camada | Medida | Situação |
-|---|---|---|
-| Banco / ORM | `@Version` (lock otimista, cobre corrida no banco) | ✅ nesta PR |
-| API | Exige `version` na edição; conflito → 409 | ✅ nesta PR |
-| Testes | Cenário de versão desatualizada → 409 | ✅ nesta PR |
-| Front-end | Usar o `version` retornado e, ao receber 409, avisar o usuário e recarregar | ⏳ sugerido |
-| UX | Mostrar "este prazo foi alterado por outra pessoa; recarregue" | ⏳ sugerido |
+O que já entrou com a correção:
 
-## 6. Melhorias futuras
+- `@Version` no banco/ORM, cobrindo a corrida de escrita.
+- A API exigindo a `version` na edição e devolvendo 409 no conflito.
+- Teste do cenário de versão desatualizada.
 
-- **ETag / If-Match:** expor a versão como `ETag` e aceitar `If-Match` no `PUT`, padronizando
-  a concorrência otimista via cabeçalhos HTTP (em vez de um campo no corpo).
-- **Auditoria:** registrar quem alterou cada prazo e quando, para rastrear conflitos.
-- **Merge assistido:** em vez de só rejeitar, mostrar as diferenças entre a versão do usuário
-  e a atual, deixando-o decidir.
+O que ainda fica como sugestão, do lado do front:
+
+- Usar a `version` que a API devolve e, ao receber 409, recarregar e avisar o usuário de que o
+  prazo mudou, em vez de só mostrar um erro genérico.
+
+## Ideias para depois
+
+- ETag e `If-Match`: expor a versão como `ETag` e aceitar `If-Match` no `PUT`, padronizando a
+  concorrência otimista pelos cabeçalhos HTTP.
+- Auditoria: registrar quem alterou cada prazo e quando, o que ajuda a investigar conflitos.
+- Merge assistido: em vez de só recusar, mostrar a diferença entre a versão do usuário e a
+  atual e deixar ele decidir.
