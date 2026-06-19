@@ -42,7 +42,7 @@ public class PrazoController {
 
     @GetMapping
     public PageResponse<PrazoResponse> listar(
-            @PageableDefault(size = 20, sort = "dataPrazo") Pageable pageable) {
+            @PageableDefault(size = 20, sort = {"dataPrazo", "id"}) Pageable pageable) {
         return PageResponse.from(service.listar(pageable), PrazoResponse::from);
     }
 

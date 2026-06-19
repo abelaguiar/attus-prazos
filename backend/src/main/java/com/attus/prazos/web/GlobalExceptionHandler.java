@@ -1,6 +1,7 @@
 package com.attus.prazos.web;
 
 import com.attus.prazos.exception.ConflitoDeVersaoException;
+import com.attus.prazos.exception.OrdenacaoInvalidaException;
 import com.attus.prazos.exception.PrazoDuplicadoException;
 import com.attus.prazos.exception.PrazoNaoEncontradoException;
 import jakarta.servlet.http.HttpServletRequest;
@@ -108,6 +109,19 @@ public class GlobalExceptionHandler {
             causa = causa.getCause();
         }
         return false;
+    }
+
+    @ExceptionHandler(OrdenacaoInvalidaException.class)
+    @ResponseStatus(HttpStatus.BAD_REQUEST)
+    public ApiError handleOrdenacaoInvalida(OrdenacaoInvalidaException ex, HttpServletRequest request) {
+        log.warn("Ordenação inválida em {}: {}", request.getRequestURI(), ex.getMessage());
+        return new ApiError(
+                Instant.now(),
+                HttpStatus.BAD_REQUEST.value(),
+                "Bad Request",
+                ex.getMessage(),
+                request.getRequestURI(),
+                List.of());
     }
 
     @ExceptionHandler(MethodArgumentNotValidException.class)

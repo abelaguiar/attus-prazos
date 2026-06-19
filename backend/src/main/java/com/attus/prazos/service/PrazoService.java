@@ -2,9 +2,11 @@ package com.attus.prazos.service;
 
 import com.attus.prazos.domain.Prazo;
 import com.attus.prazos.exception.ConflitoDeVersaoException;
+import com.attus.prazos.exception.OrdenacaoInvalidaException;
 import com.attus.prazos.exception.PrazoNaoEncontradoException;
 import com.attus.prazos.repository.PrazoRepository;
 import java.time.LocalDate;
+import java.util.Set;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.data.domain.Page;
@@ -16,6 +18,9 @@ import org.springframework.transaction.annotation.Transactional;
 public class PrazoService {
 
     private static final Logger log = LoggerFactory.getLogger(PrazoService.class);
+
+    private static final Set<String> CAMPOS_ORDENAVEIS = Set.of(
+            "id", "numeroProcesso", "descricao", "dataPrazo", "status", "criadoEm", "cumpridoEm", "version");
 
     private final PrazoRepository repository;
 
@@ -34,6 +39,11 @@ public class PrazoService {
 
     @Transactional(readOnly = true)
     public Page<Prazo> listar(Pageable pageable) {
+        pageable.getSort().forEach(order -> {
+            if (!CAMPOS_ORDENAVEIS.contains(order.getProperty())) {
+                throw new OrdenacaoInvalidaException(order.getProperty());
+            }
+        });
         return repository.findAll(pageable);
     }
 

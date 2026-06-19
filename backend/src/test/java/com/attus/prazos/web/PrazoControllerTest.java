@@ -151,4 +151,11 @@ class PrazoControllerTest {
                 .andExpect(jsonPath("$.totalPages").value(2))
                 .andExpect(jsonPath("$.last").value(false));
     }
+
+    @Test
+    void deveRetornar400ParaCampoDeOrdenacaoInvalido() throws Exception {
+        mockMvc.perform(get("/prazos").param("sort", "vencido"))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.status").value(400));
+    }
 }
