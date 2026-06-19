@@ -9,5 +9,4 @@ public class PrazosApplication {
 	public static void main(String[] args) {
 		SpringApplication.run(PrazosApplication.class, args);
 	}
-
 }

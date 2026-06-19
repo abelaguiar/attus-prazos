@@ -1,4 +1,4 @@
-package com.attus.prazos.service;
+package com.attus.prazos.exception;
 
 public class PrazoNaoEncontradoException extends RuntimeException {
 

@@ -1,6 +1,7 @@
 package com.attus.prazos.web;
 
-import com.attus.prazos.service.PrazoNaoEncontradoException;
+import com.attus.prazos.exception.PrazoDuplicadoException;
+import com.attus.prazos.exception.PrazoNaoEncontradoException;
 import jakarta.servlet.http.HttpServletRequest;
 import java.time.Instant;
 import java.util.List;
@@ -35,20 +36,26 @@ public class GlobalExceptionHandler {
                 List.of());
     }
 
+    @ExceptionHandler(PrazoDuplicadoException.class)
+    public ResponseEntity<ApiError> handleDuplicado(PrazoDuplicadoException ex,
+            HttpServletRequest request) {
+        log.warn("Conflito de prazo duplicado em {}: {}", request.getRequestURI(), ex.getMessage());
+        ApiError corpo = new ApiError(
+                Instant.now(),
+                HttpStatus.CONFLICT.value(),
+                "Conflict",
+                ex.getMessage(),
+                request.getRequestURI(),
+                List.of());
+        return ResponseEntity.status(HttpStatus.CONFLICT).body(corpo);
+    }
+
     @ExceptionHandler(DataIntegrityViolationException.class)
     public ResponseEntity<ApiError> handleIntegridade(DataIntegrityViolationException ex,
             HttpServletRequest request) {
 
         if (violouConstraint(ex, UK_PRAZO_DUPLICADO)) {
-            log.warn("Conflito de integridade em {}: prazo duplicado", request.getRequestURI());
-            ApiError corpo = new ApiError(
-                    Instant.now(),
-                    HttpStatus.CONFLICT.value(),
-                    "Conflict",
-                    "Já existe um prazo com este processo, descrição e data.",
-                    request.getRequestURI(),
-                    List.of());
-            return ResponseEntity.status(HttpStatus.CONFLICT).body(corpo);
+            return handleDuplicado(new PrazoDuplicadoException(), request);
         }
 
         log.error("Violação de integridade inesperada em {}", request.getRequestURI(), ex);

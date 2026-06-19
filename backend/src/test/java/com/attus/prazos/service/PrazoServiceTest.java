@@ -7,6 +7,7 @@ import static org.mockito.Mockito.when;
 
 import com.attus.prazos.domain.Prazo;
 import com.attus.prazos.domain.StatusPrazo;
+import com.attus.prazos.exception.PrazoNaoEncontradoException;
 import com.attus.prazos.repository.PrazoRepository;
 import java.time.LocalDate;
 import java.util.Optional;
