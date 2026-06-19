@@ -6,7 +6,10 @@ visualizar os que estão vencidos).
 
 Projeto desenvolvido como teste técnico, contemplando **desenvolvimento ponta a ponta**
 (front-end, API, persistência e logs) e uma **análise de incidente** (ver
-[`docs/INCIDENT_ANALYSIS.md`](docs/INCIDENT_ANALYSIS.md)).
+[`docs/INCIDENT_ANALYSIS_LOST_UPDATE.md`](docs/INCIDENT_ANALYSIS_LOST_UPDATE.md)).
+
+Funcionalidades: cadastrar, listar, **editar** (com controle de concorrência), marcar como
+cumprido e identificar prazos vencidos.
 
 ---
 
@@ -91,9 +94,11 @@ Base URL: `http://localhost:8080`
 | `POST` | `/prazos` | Cria um prazo | `201 Created` | `400` validação, `409` duplicado |
 | `GET` | `/prazos` | Lista todos os prazos | `200 OK` | — |
 | `GET` | `/prazos/{id}` | Busca um prazo | `200 OK` | `404` não encontrado |
+| `PUT` | `/prazos/{id}` | Edita um prazo (exige `version`) | `200 OK` | `400` validação, `404` não encontrado, `409` conflito de versão |
 | `PATCH` | `/prazos/{id}/cumprir` | Marca como cumprido | `200 OK` | `404` não encontrado |
 
-Toda resposta inclui o header **`X-Request-Id`** (rastreável nos logs).
+Toda resposta inclui o header **`X-Request-Id`** (rastreável nos logs). O campo `version`
+(controle de concorrência otimista) é retornado em toda resposta e exigido no `PUT`.
 
 ### Exemplos
 
@@ -114,7 +119,8 @@ Resposta (`201`):
   "status": "PENDENTE",
   "vencido": false,
   "criadoEm": "2026-06-18T20:00:00Z",
-  "cumpridoEm": null
+  "cumpridoEm": null,
+  "version": 0
 }
 ```
 
@@ -133,6 +139,19 @@ Entrada inválida (`400`) — retorna o detalhe de cada campo:
 Prazo duplicado (`409`) — mesmo processo + descrição + data:
 ```json
 { "status": 409, "error": "Conflict", "message": "Já existe um prazo com este processo, descrição e data." }
+```
+
+Editar um prazo — envie o `version` que você recebeu na leitura:
+```bash
+curl -X PUT http://localhost:8080/prazos/1 \
+  -H "Content-Type: application/json" \
+  -d '{"descricao":"Apelação","dataPrazo":"2027-01-15","version":0}'
+```
+
+Conflito de versão (`409`) — alguém editou o prazo antes de você (a `version` enviada está
+desatualizada). A edição é **rejeitada** em vez de sobrescrever (previne *lost update*):
+```json
+{ "status": 409, "error": "Conflict", "message": "O prazo 1 foi modificado por outra operação. Recarregue e tente novamente." }
 ```
 
 ---
@@ -163,12 +182,12 @@ attus-prazos/
 │       └── web/            # Controller, DTOs, ExceptionHandler, RequestIdFilter
 ├── frontend/           # App React + TypeScript (Vite)
 │   └── src/
-│       ├── components/     # PrazoForm, PrazoList
+│       ├── components/     # PrazoForm, PrazoEditForm, PrazoList
 │       ├── api.ts          # Cliente HTTP
 │       └── types.ts        # Tipos espelhando o contrato da API
 ├── docs/
-│   ├── INCIDENT_ANALYSIS.md  # Parte 2 — análise de incidente
-│   └── TECH_NOTES.md         # Decisões técnicas, trade-offs e melhorias
+│   ├── INCIDENT_ANALYSIS_LOST_UPDATE.md   # Parte 2 — análise de incidente (lost update)
+│   └── TECH_NOTES.md                      # Decisões técnicas, trade-offs e melhorias
 └── docker-compose.yml
 ```
 
@@ -176,5 +195,5 @@ attus-prazos/
 
 ## Documentação adicional
 
-- 📄 [Análise de incidente (Parte 2)](docs/INCIDENT_ANALYSIS.md)
+- 📄 [Análise de incidente — lost update (Parte 2)](docs/INCIDENT_ANALYSIS_LOST_UPDATE.md)
 - 📄 [Nota técnica — decisões e trade-offs](docs/TECH_NOTES.md)

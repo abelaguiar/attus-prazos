@@ -46,7 +46,19 @@ no cliente.
 A unicidade de prazo é garantida por uma constraint `UNIQUE` no banco, não por uma checagem
 na aplicação.
 **Por quê:** sob concorrência, um `SELECT` antes do `INSERT` tem condição de corrida; só a
-constraint garante a invariante de fato. (Detalhes em `INCIDENT_ANALYSIS.md`.)
+constraint garante a invariante de fato.
+
+### Controle de concorrência otimista (edição)
+A edição de prazo usa **trava otimista**: a entidade tem `@Version` e o `PUT /prazos/{id}`
+exige a `version` que o cliente carregou. Se estiver desatualizada, a operação é rejeitada
+com `409` em vez de sobrescrever — previne *lost update*.
+**Por quê otimista (e não pessimista):** conflitos de edição são raros; travar a linha
+(pessimista) penalizaria o caso comum. O otimista assume sucesso e detecta o conflito na
+escrita — escala melhor.
+**Duas camadas:** a checagem explícita da `version` resolve o *read-modify-write* entre
+requisições HTTP separadas (*optimistic offline lock*); o `@Version` cobre a corrida fina no
+banco (`ObjectOptimisticLockingFailureException` → `409`). Detalhes em
+`INCIDENT_ANALYSIS_LOST_UPDATE.md`.
 
 ### H2 em memória
 Banco em memória para zero fricção de setup (não exige instalar nada).
@@ -59,6 +71,8 @@ por PostgreSQL altera apenas a configuração de datasource.
   Hibernate (`ddl-auto`); em produção o schema deveria ser versionado e auditável.
 - **Idempotency key** no `POST /prazos`: retries legítimos de rede retornariam o recurso já
   criado em vez de `409`.
+- **ETag / If-Match na edição:** expor a `version` como `ETag` e aceitar `If-Match` no `PUT`,
+  padronizando a concorrência otimista via cabeçalhos HTTP em vez de um campo no corpo.
 - **Documentação interativa da API (OpenAPI/Swagger):** complementaria a documentação do README.
 - **Paginação e filtros** em `GET /prazos` (por situação, por vencimento).
 - **Autenticação/autorização** (ex.: por procurador) e auditoria de quem cumpriu cada prazo.
