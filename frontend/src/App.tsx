@@ -18,6 +18,7 @@ export default function App() {
   const [prazoEmEdicao, setPrazoEmEdicao] = useState<Prazo | null>(null);
 
   const carregarPagina = useCallback(async (p: number) => {
+    setCarregando(true);
     try {
       const resultado = await listarPrazos(p, TAMANHO_PAGINA);
       setPrazos(resultado.content);
@@ -60,8 +61,9 @@ export default function App() {
 
   async function handleConflito() {
     setPrazoEmEdicao(null);
-    setErro('Este prazo foi alterado por outra pessoa. A lista foi atualizada — confira e tente de novo.');
+    // recarrega ANTES de exibir o aviso, pois carregarPagina limpa o erro no sucesso
     await carregarPagina(pagina);
+    setErro('Este prazo foi alterado por outra pessoa. A lista foi atualizada — confira e tente de novo.');
   }
 
   return (
