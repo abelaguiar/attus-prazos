@@ -2,15 +2,15 @@ services:
   postgres:
     image: postgres:16-alpine
     environment:
-      POSTGRES_DB: prazos
-      POSTGRES_USER: prazos
-      POSTGRES_PASSWORD: prazos
+      POSTGRES_DB: ${POSTGRES_DB:-prazos}
+      POSTGRES_USER: ${POSTGRES_USER:-prazos}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-prazos}
     ports:
-      - "5432:5432"
+      - "${DB_PORT:-5432}:5432"
     volumes:
       - pgdata:/var/lib/postgresql/data
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U prazos -d prazos"]
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-prazos} -d ${POSTGRES_DB:-prazos}"]
       interval: 5s
       timeout: 3s
       retries: 10
@@ -19,6 +19,9 @@ services:
     build: ./backend
     environment:
       SPRING_PROFILES_ACTIVE: docker
+      POSTGRES_DB: ${POSTGRES_DB:-prazos}
+      POSTGRES_USER: ${POSTGRES_USER:-prazos}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-prazos}
     ports:
       - "8080:8080"
     depends_on:
