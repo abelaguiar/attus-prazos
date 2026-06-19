@@ -48,6 +48,7 @@ docker compose up --build
 
 - Front: <http://localhost:5173>
 - API: <http://localhost:8080>
+- Swagger UI: <http://localhost:8080/swagger-ui.html>
 - Banco: PostgreSQL no container `postgres`, selecionado pelo profile `docker`.
 
 As credenciais e a porta do Postgres têm valores padrão, mas dá pra sobrescrever por variável
@@ -88,6 +89,11 @@ cd backend
 ## API
 
 Base: `http://localhost:8080`
+
+Documentacao interativa:
+
+- Swagger UI: <http://localhost:8080/swagger-ui.html>
+- OpenAPI JSON: <http://localhost:8080/v3/api-docs>
 
 | Método | Rota | Descrição | Sucesso | Erros |
 |---|---|---|---|---|
