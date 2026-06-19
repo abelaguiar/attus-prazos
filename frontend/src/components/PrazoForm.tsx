@@ -1,6 +1,7 @@
 import { useState, type FormEvent } from 'react';
 import { ApiException, criarPrazo } from '../api';
 import type { Prazo } from '../types';
+import { IconPlus } from './icons';
 
 interface Props {
   onCriado: (prazo: Prazo) => void;
@@ -91,7 +92,8 @@ export function PrazoForm({ onCriado }: Props) {
 
       {erros.geral && <p className="erro-geral">{erros.geral}</p>}
 
-      <button type="submit" disabled={enviando}>
+      <button type="submit" className="btn btn-primary" disabled={enviando}>
+        <IconPlus />
         {enviando ? 'Salvando...' : 'Cadastrar prazo'}
       </button>
     </form>

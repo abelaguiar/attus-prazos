@@ -1,4 +1,5 @@
 import type { Prazo } from '../types';
+import { IconCheck, IconPencil } from './icons';
 
 interface Props {
   prazos: Prazo[];
@@ -26,6 +27,7 @@ export function PrazoList({ prazos, onCumprir, onEditar }: Props) {
   }
 
   return (
+    <div className="prazo-table-wrap">
     <table className="prazo-table">
       <thead>
         <tr>
@@ -50,10 +52,20 @@ export function PrazoList({ prazos, onCumprir, onEditar }: Props) {
               <td>
                 {prazo.status === 'PENDENTE' && (
                   <div className="acoes">
-                    <button type="button" onClick={() => onEditar(prazo)}>
+                    <button
+                      type="button"
+                      className="btn btn-outline btn-sm"
+                      onClick={() => onEditar(prazo)}
+                    >
+                      <IconPencil size={14} />
                       Editar
                     </button>
-                    <button type="button" onClick={() => onCumprir(prazo.id)}>
+                    <button
+                      type="button"
+                      className="btn btn-success btn-sm"
+                      onClick={() => onCumprir(prazo.id)}
+                    >
+                      <IconCheck size={14} />
                       Marcar cumprido
                     </button>
                   </div>
@@ -64,5 +76,6 @@ export function PrazoList({ prazos, onCumprir, onEditar }: Props) {
         })}
       </tbody>
     </table>
+    </div>
   );
 }
