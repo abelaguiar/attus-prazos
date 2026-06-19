@@ -1,6 +1,7 @@
 import { useState, type FormEvent } from 'react';
 import { ApiException, atualizarPrazo } from '../api';
 import type { Prazo } from '../types';
+import { IconSave, IconX } from './icons';
 
 interface Props {
   prazo: Prazo;
@@ -72,10 +73,12 @@ export function PrazoEditForm({ prazo, onSalvo, onConflito, onCancelar }: Props)
       {erros.geral && <p className="erro-geral">{erros.geral}</p>}
 
       <div className="form-acoes">
-        <button type="submit" disabled={enviando}>
+        <button type="submit" className="btn btn-primary" disabled={enviando}>
+          <IconSave />
           {enviando ? 'Salvando...' : 'Salvar alterações'}
         </button>
-        <button type="button" className="secundario" onClick={onCancelar} disabled={enviando}>
+        <button type="button" className="btn btn-ghost" onClick={onCancelar} disabled={enviando}>
+          <IconX />
           Cancelar
         </button>
       </div>

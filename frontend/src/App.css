@@ -1,28 +1,74 @@
+:root {
+  --azul: #2563eb;
+  --azul-escuro: #1d4ed8;
+  --azul-claro: #eff6ff;
+  --verde: #16a34a;
+  --verde-escuro: #15803d;
+  --texto: #1e293b;
+  --muted: #64748b;
+  --borda: #e2e8f0;
+  --branco: #ffffff;
+  --fundo: #f8fafc;
+}
+
+body {
+  background: var(--fundo);
+}
+
 .container {
-  max-width: 880px;
+  max-width: 920px;
   margin: 0 auto;
-  padding: 2rem 1rem;
+  padding: 2rem 1rem 4rem;
   font-family: system-ui, sans-serif;
   text-align: left;
+  color: var(--texto);
 }
 
-header h1 {
-  margin-bottom: 0.25rem;
+/* Cabeçalho full-width (ponta a ponta) */
+.app-header {
+  background: var(--azul);
+  color: #fff;
+  width: 100%;
 }
 
-.subtitulo {
-  color: #666;
-  margin-top: 0;
+.app-header__inner {
+  max-width: 920px;
+  margin: 0 auto;
+  padding: 1.75rem 1rem;
 }
 
+.app-header h1 {
+  margin: 0 0 0.35rem;
+  color: #fff;
+}
+
+.app-header .subtitulo {
+  margin: 0;
+  color: rgba(255, 255, 255, 0.85);
+}
+
+section h2 {
+  color: var(--texto);
+}
+
+/* Formulário em card branco com topo azul */
 .prazo-form {
   display: flex;
   flex-direction: column;
   gap: 1rem;
-  background: #f7f7f8;
+  background: var(--branco);
+  border: 1px solid var(--borda);
+  border-top: 3px solid var(--azul);
   padding: 1.5rem;
-  border-radius: 8px;
+  border-radius: 10px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
   margin-bottom: 2rem;
+}
+
+.prazo-form h2 {
+  margin: 0;
+  color: var(--azul);
+  font-size: 1.15rem;
 }
 
 .prazo-form label {
@@ -30,32 +76,95 @@ header h1 {
   flex-direction: column;
   gap: 0.35rem;
   font-weight: 600;
+  font-size: 0.9rem;
 }
 
 .prazo-form input {
-  padding: 0.5rem;
-  border: 1px solid #ccc;
-  border-radius: 6px;
+  padding: 0.55rem 0.65rem;
+  border: 1px solid var(--borda);
+  border-radius: 8px;
   font-size: 1rem;
   font-weight: 400;
+  color: var(--texto);
 }
 
-.prazo-form button {
-  align-self: flex-start;
-  padding: 0.6rem 1.2rem;
-  border: none;
-  border-radius: 6px;
-  background: #2563eb;
-  color: #fff;
-  font-size: 1rem;
+.prazo-form input:focus {
+  outline: none;
+  border-color: var(--azul);
+  box-shadow: 0 0 0 3px var(--azul-claro);
+}
+
+/* Botões — base + variantes por tipo de ação */
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.45rem;
+  padding: 0.6rem 1.1rem;
+  border-radius: 8px;
+  border: 1px solid transparent;
+  font-size: 0.95rem;
+  font-weight: 600;
   cursor: pointer;
+  transition: background 0.15s ease, color 0.15s ease, border-color 0.15s ease;
 }
 
-.prazo-form button:disabled {
-  opacity: 0.6;
+.btn:disabled {
+  opacity: 0.55;
   cursor: default;
 }
 
+.btn-sm {
+  padding: 0.4rem 0.7rem;
+  font-size: 0.85rem;
+}
+
+/* Primário (cadastrar / salvar) — azul sólido */
+.btn-primary {
+  background: var(--azul);
+  color: #fff;
+  align-self: flex-start;
+}
+.btn-primary:hover:not(:disabled) {
+  background: var(--azul-escuro);
+}
+
+/* Editar — contorno azul */
+.btn-outline {
+  background: #fff;
+  color: var(--azul);
+  border-color: var(--azul);
+}
+.btn-outline:hover:not(:disabled) {
+  background: var(--azul-claro);
+}
+
+/* Cumprir — verde (ação positiva) */
+.btn-success {
+  background: var(--verde);
+  color: #fff;
+}
+.btn-success:hover:not(:disabled) {
+  background: var(--verde-escuro);
+}
+
+/* Cancelar / neutro */
+.btn-ghost {
+  background: #fff;
+  color: var(--muted);
+  border-color: var(--borda);
+}
+.btn-ghost:hover:not(:disabled) {
+  background: var(--fundo);
+  color: var(--texto);
+}
+
+.form-acoes {
+  display: flex;
+  gap: 0.6rem;
+}
+
+/* Erros */
 .erro-campo {
   color: #b91c1c;
   font-size: 0.85rem;
@@ -65,34 +174,56 @@ header h1 {
 .erro-geral {
   color: #b91c1c;
   font-weight: 600;
+  background: #fef2f2;
+  border: 1px solid #fecaca;
+  padding: 0.6rem 0.8rem;
+  border-radius: 8px;
 }
 
+/* Tabela em card branco */
 .prazo-table {
   width: 100%;
   border-collapse: collapse;
-}
-
-.prazo-table th,
-.prazo-table td {
-  text-align: left;
-  padding: 0.6rem;
-  border-bottom: 1px solid #eee;
-}
-
-.prazo-table button {
-  padding: 0.35rem 0.7rem;
-  border: 1px solid #2563eb;
-  border-radius: 6px;
   background: #fff;
-  color: #2563eb;
-  cursor: pointer;
+  border: 1px solid var(--borda);
+  border-radius: 10px;
+  overflow: hidden;
 }
 
+.prazo-table thead {
+  background: var(--azul-claro);
+}
+
+.prazo-table th {
+  text-align: left;
+  padding: 0.75rem;
+  color: var(--azul);
+  font-size: 0.78rem;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+}
+
+.prazo-table td {
+  padding: 0.75rem;
+  border-top: 1px solid var(--borda);
+}
+
+.prazo-table tbody tr:hover {
+  background: var(--fundo);
+}
+
+.acoes {
+  display: flex;
+  gap: 0.4rem;
+}
+
+/* Badges de situação */
 .badge {
-  display: inline-block;
-  padding: 0.15rem 0.6rem;
+  display: inline-flex;
+  align-items: center;
+  padding: 0.2rem 0.7rem;
   border-radius: 999px;
-  font-size: 0.8rem;
+  font-size: 0.78rem;
   font-weight: 600;
 }
 
@@ -112,21 +243,39 @@ header h1 {
 }
 
 .vazio {
-  color: #666;
+  color: var(--muted);
 }
 
-.form-acoes {
-  display: flex;
-  gap: 0.6rem;
+/* Tabela rola horizontalmente em telas estreitas em vez de espremer */
+.prazo-table-wrap {
+  overflow-x: auto;
 }
 
-.prazo-form button.secundario {
-  background: #fff;
-  color: #374151;
-  border: 1px solid #ccc;
+.prazo-table {
+  min-width: 560px;
 }
 
-.prazo-table .acoes {
-  display: flex;
-  gap: 0.4rem;
+/* Responsivo */
+@media (max-width: 640px) {
+  .app-header__inner {
+    padding: 1.25rem 0.9rem;
+  }
+
+  .app-header h1 {
+    font-size: 1.5rem;
+  }
+
+  .container {
+    padding: 1.25rem 0.9rem 3rem;
+  }
+
+  .form-acoes,
+  .acoes {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .btn-primary {
+    align-self: stretch;
+  }
 }

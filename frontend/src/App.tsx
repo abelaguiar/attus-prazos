@@ -57,12 +57,15 @@ export default function App() {
   }
 
   return (
-    <main className="container">
-      <header>
-        <h1>Monitor de Prazos Processuais</h1>
-        <p className="subtitulo">Cadastre e acompanhe os prazos dos processos.</p>
+    <>
+      <header className="app-header">
+        <div className="app-header__inner">
+          <h1>Monitor de Prazos Processuais</h1>
+          <p className="subtitulo">Cadastre e acompanhe os prazos dos processos.</p>
+        </div>
       </header>
 
+      <main className="container">
       {prazoEmEdicao ? (
         <PrazoEditForm
           key={prazoEmEdicao.id}
@@ -83,6 +86,7 @@ export default function App() {
           <PrazoList prazos={prazos} onCumprir={handleCumprir} onEditar={handleEditar} />
         )}
       </section>
-    </main>
+      </main>
+    </>
   );
 }
