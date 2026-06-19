@@ -18,7 +18,7 @@ cumprido e identificar prazos vencidos.
 | Camada | Tecnologia |
 |---|---|
 | Back-end | Java 21, Spring Boot 4 (Web MVC, Data JPA, Bean Validation) |
-| Banco | H2 em memória (dev/teste) |
+| Banco | PostgreSQL (via Docker) · H2 em memória (local/testes) |
 | Logs | SLF4J + logback, **JSON estruturado (ECS)** com `requestId` por requisição |
 | Testes | JUnit 5, Mockito, Spring MockMvc |
 | Front-end | React 19 + TypeScript + Vite |
@@ -29,7 +29,7 @@ cumprido e identificar prazos vencidos.
 Back-end em camadas (separação de responsabilidades):
 
 ```
-HTTP → Controller → Service → Repository → Banco (H2)
+HTTP → Controller → Service → Repository → Banco (H2 · PostgreSQL)
         (borda)     (regras)   (acesso)
 ```
 
@@ -58,6 +58,26 @@ docker compose up --build
 
 - Front-end: <http://localhost:5173>
 - API: <http://localhost:8080>
+- Banco: **PostgreSQL** (container `postgres`), ativado pelo profile `docker`.
+
+### Banco de dados por ambiente
+
+| Como roda | Banco | Como é selecionado |
+|---|---|---|
+| `docker compose up` | PostgreSQL | profile `docker` (`SPRING_PROFILES_ACTIVE=docker` no compose) |
+| Local (`./mvnw spring-boot:run`) e testes | H2 em memória | profile default (`application.properties`) |
+
+Ou seja: **com Docker usa Postgres; sem Docker, H2** — sem precisar mudar nada no código.
+
+As credenciais e a porta do Postgres têm defaults, mas são sobrescrevíveis por variáveis de
+ambiente (úteis se a `5432` já estiver em uso ou para não versionar senhas):
+
+```bash
+DB_PORT=5433 POSTGRES_PASSWORD=secret docker compose up
+```
+
+Variáveis: `POSTGRES_DB`, `POSTGRES_USER`, `POSTGRES_PASSWORD` (default `prazos`) e
+`DB_PORT` (porta publicada no host, default `5432`).
 
 ### Opção B — Local (desenvolvimento)
 
