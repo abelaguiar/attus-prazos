@@ -1,5 +1,6 @@
 package com.attus.prazos.web;
 
+import com.attus.prazos.exception.ConflitoDeVersaoException;
 import com.attus.prazos.exception.PrazoDuplicadoException;
 import com.attus.prazos.exception.PrazoNaoEncontradoException;
 import jakarta.servlet.http.HttpServletRequest;
@@ -10,6 +11,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.HttpStatus;
+import org.springframework.orm.ObjectOptimisticLockingFailureException;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
@@ -32,6 +34,33 @@ public class GlobalExceptionHandler {
                 HttpStatus.NOT_FOUND.value(),
                 "Not Found",
                 ex.getMessage(),
+                request.getRequestURI(),
+                List.of());
+    }
+
+    @ExceptionHandler(ConflitoDeVersaoException.class)
+    @ResponseStatus(HttpStatus.CONFLICT)
+    public ApiError handleConflitoVersao(ConflitoDeVersaoException ex, HttpServletRequest request) {
+        log.warn("Conflito de versão em {}: {}", request.getRequestURI(), ex.getMessage());
+        return new ApiError(
+                Instant.now(),
+                HttpStatus.CONFLICT.value(),
+                "Conflict",
+                ex.getMessage(),
+                request.getRequestURI(),
+                List.of());
+    }
+
+    @ExceptionHandler(ObjectOptimisticLockingFailureException.class)
+    @ResponseStatus(HttpStatus.CONFLICT)
+    public ApiError handleConcorrencia(ObjectOptimisticLockingFailureException ex,
+            HttpServletRequest request) {
+        log.warn("Conflito de concorrência (lock otimista) em {}", request.getRequestURI());
+        return new ApiError(
+                Instant.now(),
+                HttpStatus.CONFLICT.value(),
+                "Conflict",
+                "O prazo foi modificado por outra operação. Recarregue e tente novamente.",
                 request.getRequestURI(),
                 List.of());
     }

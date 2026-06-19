@@ -14,7 +14,8 @@ public record PrazoResponse(
         StatusPrazo status,
         boolean vencido,
         Instant criadoEm,
-        LocalDateTime cumpridoEm
+        LocalDateTime cumpridoEm,
+        Long version
 ) {
 
     public static PrazoResponse from(Prazo prazo) {
@@ -26,7 +27,8 @@ public record PrazoResponse(
                 prazo.getStatus(),
                 prazo.isVencido(),
                 prazo.getCriadoEm(),
-                prazo.getCumpridoEm()
+                prazo.getCumpridoEm(),
+                prazo.getVersion()
         );
     }
 }

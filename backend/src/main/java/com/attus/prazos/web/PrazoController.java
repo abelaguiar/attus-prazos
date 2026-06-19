@@ -2,6 +2,7 @@ package com.attus.prazos.web;
 
 import com.attus.prazos.domain.Prazo;
 import com.attus.prazos.service.PrazoService;
+import com.attus.prazos.web.dto.AtualizarPrazoRequest;
 import com.attus.prazos.web.dto.CriarPrazoRequest;
 import com.attus.prazos.web.dto.PrazoResponse;
 import jakarta.validation.Valid;
@@ -11,6 +12,7 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.ResponseStatus;
@@ -46,6 +48,17 @@ public class PrazoController {
     @GetMapping("/{id}")
     public PrazoResponse buscarPorId(@PathVariable Long id) {
         return PrazoResponse.from(service.buscarPorId(id));
+    }
+
+    @PutMapping("/{id}")
+    public PrazoResponse atualizar(@PathVariable Long id,
+            @Valid @RequestBody AtualizarPrazoRequest request) {
+        Prazo prazo = service.atualizar(
+                id,
+                request.descricao(),
+                request.dataPrazo(),
+                request.version());
+        return PrazoResponse.from(prazo);
     }
 
     @PatchMapping("/{id}/cumprir")

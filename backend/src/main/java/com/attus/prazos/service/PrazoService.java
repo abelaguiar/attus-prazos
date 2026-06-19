@@ -1,6 +1,7 @@
 package com.attus.prazos.service;
 
 import com.attus.prazos.domain.Prazo;
+import com.attus.prazos.exception.ConflitoDeVersaoException;
 import com.attus.prazos.exception.PrazoNaoEncontradoException;
 import com.attus.prazos.repository.PrazoRepository;
 import java.time.LocalDate;
@@ -47,6 +48,20 @@ public class PrazoService {
         prazo.marcarComoCumprido();
         Prazo atualPrazo = repository.save(prazo);
         log.info("Prazo cumprido id={} numeroProcesso={}", atualPrazo.getId(), atualPrazo.getNumeroProcesso());
+        return atualPrazo;
+    }
+
+    @Transactional
+    public Prazo atualizar(Long id, String descricao, LocalDate dataPrazo, Long versaoCliente) {
+        Prazo prazo = buscarPorId(id);
+        if (!prazo.getVersion().equals(versaoCliente)) {
+            log.warn("Conflito de versão id={} versaoCliente={} versaoAtual={}",
+                    id, versaoCliente, prazo.getVersion());
+            throw new ConflitoDeVersaoException(id);
+        }
+        prazo.atualizar(descricao, dataPrazo);
+        Prazo atualPrazo = repository.save(prazo);
+        log.info("Prazo atualizado id={} versaoAtual={}", id, atualPrazo.getVersion());
         return atualPrazo;
     }
 }
