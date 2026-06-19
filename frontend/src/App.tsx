@@ -65,6 +65,7 @@ export default function App() {
 
       {prazoEmEdicao ? (
         <PrazoEditForm
+          key={prazoEmEdicao.id}
           prazo={prazoEmEdicao}
           onSalvo={handleSalvo}
           onConflito={handleConflito}
@@ -78,7 +79,7 @@ export default function App() {
         <h2>Prazos</h2>
         {carregando && <p>Carregando...</p>}
         {erro && <p className="erro-geral">{erro}</p>}
-        {!carregando && (
+        {!carregando && !(erro && prazos.length === 0) && (
           <PrazoList prazos={prazos} onCumprir={handleCumprir} onEditar={handleEditar} />
         )}
       </section>
