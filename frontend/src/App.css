@@ -114,3 +114,19 @@ header h1 {
 .vazio {
   color: #666;
 }
+
+.form-acoes {
+  display: flex;
+  gap: 0.6rem;
+}
+
+.prazo-form button.secundario {
+  background: #fff;
+  color: #374151;
+  border: 1px solid #ccc;
+}
+
+.prazo-table .acoes {
+  display: flex;
+  gap: 0.4rem;
+}

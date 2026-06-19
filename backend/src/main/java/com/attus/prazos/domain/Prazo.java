@@ -9,6 +9,7 @@ import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.Table;
 import jakarta.persistence.UniqueConstraint;
+import jakarta.persistence.Version;
 import java.time.Instant;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
@@ -45,6 +46,9 @@ public class Prazo {
     @Column(name = "cumprido_em")
     private LocalDateTime cumpridoEm;
 
+    @Version
+    private Long version;
+
     protected Prazo() {
     }
 
@@ -60,6 +64,11 @@ public class Prazo {
     public void marcarComoCumprido() {
         this.status = StatusPrazo.CUMPRIDO;
         this.cumpridoEm = LocalDateTime.now();
+    }
+
+    public void atualizar(String descricao, LocalDate dataPrazo) {
+        this.descricao = descricao;
+        this.dataPrazo = dataPrazo;
     }
 
     /** Condicao DERIVADA: nao existe coluna para isso, calculamos na hora. */
@@ -93,5 +102,9 @@ public class Prazo {
 
     public LocalDateTime getCumpridoEm() {
         return cumpridoEm;
+    }
+
+    public Long getVersion() {
+        return version;
     }
 }

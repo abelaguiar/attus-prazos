@@ -4,6 +4,7 @@ import static org.hamcrest.Matchers.hasSize;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.patch;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.header;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
@@ -94,5 +95,44 @@ class PrazoControllerTest {
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.status").value("CUMPRIDO"))
                 .andExpect(jsonPath("$.cumpridoEm").isNotEmpty());
+    }
+
+    @Test
+    void deveAtualizarPrazoComVersaoCorreta() throws Exception {
+        Prazo prazo = repository.save(
+                new Prazo("0001234-56.2026.8.26.0100", "Contestacao", LocalDate.now().plusDays(10)));
+        Long versao = prazo.getVersion();
+
+        String corpo = """
+                {"descricao":"Apelacao","dataPrazo":"%s","version":%d}
+                """.formatted(LocalDate.now().plusDays(20), versao);
+
+        mockMvc.perform(put("/prazos/{id}", prazo.getId())
+                        .contentType(MediaType.APPLICATION_JSON).content(corpo))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.descricao").value("Apelacao"))
+                .andExpect(jsonPath("$.version").value(versao + 1));
+    }
+
+    @Test
+    void deveRejeitarAtualizacaoComVersaoDesatualizadaCom409() throws Exception {
+        Prazo prazo = repository.save(
+                new Prazo("0001234-56.2026.8.26.0100", "Contestacao", LocalDate.now().plusDays(10)));
+        Long versaoDesatualizada = prazo.getVersion();
+
+        String corpo = """
+                {"descricao":"Apelacao","dataPrazo":"%s","version":%d}
+                """.formatted(LocalDate.now().plusDays(20), versaoDesatualizada);
+
+        // 1a edicao com a versao correta -> OK (a versao do prazo incrementa)
+        mockMvc.perform(put("/prazos/{id}", prazo.getId())
+                        .contentType(MediaType.APPLICATION_JSON).content(corpo))
+                .andExpect(status().isOk());
+
+        // 2a edicao reusando a versao ja desatualizada -> 409
+        mockMvc.perform(put("/prazos/{id}", prazo.getId())
+                        .contentType(MediaType.APPLICATION_JSON).content(corpo))
+                .andExpect(status().isConflict())
+                .andExpect(jsonPath("$.status").value(409));
     }
 }
