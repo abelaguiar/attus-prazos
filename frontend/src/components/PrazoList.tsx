@@ -3,6 +3,7 @@ import type { Prazo } from '../types';
 interface Props {
   prazos: Prazo[];
   onCumprir: (id: number) => void;
+  onEditar: (prazo: Prazo) => void;
 }
 
 function rotuloSituacao(prazo: Prazo): { texto: string; classe: string } {
@@ -19,7 +20,7 @@ function formatarData(iso: string): string {
   return new Date(`${iso}T00:00:00`).toLocaleDateString('pt-BR');
 }
 
-export function PrazoList({ prazos, onCumprir }: Props) {
+export function PrazoList({ prazos, onCumprir, onEditar }: Props) {
   if (prazos.length === 0) {
     return <p className="vazio">Nenhum prazo cadastrado ainda.</p>;
   }
@@ -48,9 +49,14 @@ export function PrazoList({ prazos, onCumprir }: Props) {
               </td>
               <td>
                 {prazo.status === 'PENDENTE' && (
-                  <button type="button" onClick={() => onCumprir(prazo.id)}>
-                    Marcar cumprido
-                  </button>
+                  <div className="acoes">
+                    <button type="button" onClick={() => onEditar(prazo)}>
+                      Editar
+                    </button>
+                    <button type="button" onClick={() => onCumprir(prazo.id)}>
+                      Marcar cumprido
+                    </button>
+                  </div>
                 )}
               </td>
             </tr>

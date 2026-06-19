@@ -9,12 +9,19 @@ export interface Prazo {
   vencido: boolean;
   criadoEm: string;
   cumpridoEm: string | null;
+  version: number;
 }
 
 export interface CriarPrazoRequest {
   numeroProcesso: string;
   descricao: string;
   dataPrazo: string;
+}
+
+export interface AtualizarPrazoRequest {
+  descricao: string;
+  dataPrazo: string;
+  version: number;
 }
 
 export interface ApiFieldError {
