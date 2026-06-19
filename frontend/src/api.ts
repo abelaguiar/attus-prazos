@@ -1,4 +1,4 @@
-import type { ApiError, AtualizarPrazoRequest, CriarPrazoRequest, Prazo } from './types';
+import type { ApiError, AtualizarPrazoRequest, CriarPrazoRequest, Pagina, Prazo } from './types';
 
 const API_BASE = 'http://localhost:8080';
 
@@ -19,8 +19,10 @@ async function handleResponse<T>(response: Response): Promise<T> {
   return (await response.json()) as T;
 }
 
-export function listarPrazos(): Promise<Prazo[]> {
-  return fetch(`${API_BASE}/prazos`).then((r) => handleResponse<Prazo[]>(r));
+export function listarPrazos(page = 0, size = 10): Promise<Pagina<Prazo>> {
+  return fetch(`${API_BASE}/prazos?page=${page}&size=${size}`).then((r) =>
+    handleResponse<Pagina<Prazo>>(r),
+  );
 }
 
 export function criarPrazo(request: CriarPrazoRequest): Promise<Prazo> {
