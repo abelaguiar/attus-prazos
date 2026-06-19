@@ -18,7 +18,7 @@ cumprido e identificar prazos vencidos.
 | Camada | Tecnologia |
 |---|---|
 | Back-end | Java 21, Spring Boot 4 (Web MVC, Data JPA, Bean Validation) |
-| Banco | H2 em memória (dev/teste) |
+| Banco | PostgreSQL (via Docker) · H2 em memória (local/testes) |
 | Logs | SLF4J + logback, **JSON estruturado (ECS)** com `requestId` por requisição |
 | Testes | JUnit 5, Mockito, Spring MockMvc |
 | Front-end | React 19 + TypeScript + Vite |
@@ -58,6 +58,16 @@ docker compose up --build
 
 - Front-end: <http://localhost:5173>
 - API: <http://localhost:8080>
+- Banco: **PostgreSQL** (container `postgres`), ativado pelo profile `docker`.
+
+### Banco de dados por ambiente
+
+| Como roda | Banco | Como é selecionado |
+|---|---|---|
+| `docker compose up` | PostgreSQL | profile `docker` (`SPRING_PROFILES_ACTIVE=docker` no compose) |
+| Local (`./mvnw spring-boot:run`) e testes | H2 em memória | profile default (`application.properties`) |
+
+Ou seja: **com Docker usa Postgres; sem Docker, H2** — sem precisar mudar nada no código.
 
 ### Opção B — Local (desenvolvimento)
 
