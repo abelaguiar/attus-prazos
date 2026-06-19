@@ -4,9 +4,11 @@ import com.attus.prazos.domain.Prazo;
 import com.attus.prazos.service.PrazoService;
 import com.attus.prazos.web.dto.AtualizarPrazoRequest;
 import com.attus.prazos.web.dto.CriarPrazoRequest;
+import com.attus.prazos.web.dto.PageResponse;
 import com.attus.prazos.web.dto.PrazoResponse;
 import jakarta.validation.Valid;
-import java.util.List;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.web.PageableDefault;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PatchMapping;
@@ -39,10 +41,9 @@ public class PrazoController {
     }
 
     @GetMapping
-    public List<PrazoResponse> listar() {
-        return service.listar().stream()
-                .map(PrazoResponse::from)
-                .toList();
+    public PageResponse<PrazoResponse> listar(
+            @PageableDefault(size = 20, sort = "dataPrazo") Pageable pageable) {
+        return PageResponse.from(service.listar(pageable), PrazoResponse::from);
     }
 
     @GetMapping("/{id}")
