@@ -29,7 +29,7 @@ public class Prazo {
     @Column(name = "numero_processo", nullable = false)
     private String numeroProcesso;
 
-    @Column(nullable = false)
+    @Column(nullable = false, columnDefinition = "text")
     private String descricao;
 
     @Column(name = "data_prazo", nullable = false)

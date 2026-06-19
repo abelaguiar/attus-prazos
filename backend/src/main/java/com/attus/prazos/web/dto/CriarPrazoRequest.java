@@ -13,7 +13,7 @@ public record CriarPrazoRequest(
         String numeroProcesso,
 
         @NotBlank(message = "descricao e' obrigatoria")
-        @Size(max = 255, message = "descricao deve ter no maximo 255 caracteres")
+        @Size(max = 2000, message = "descricao deve ter no maximo 2000 caracteres")
         String descricao,
 
         @NotNull(message = "dataPrazo e' obrigatoria")

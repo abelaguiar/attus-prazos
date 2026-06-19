@@ -1,5 +1,6 @@
 import { useState, type FormEvent } from 'react';
 import { ApiException, criarPrazo } from '../api';
+import { mascaraProcesso } from '../mascaras';
 import type { Prazo } from '../types';
 import { IconPlus } from './icons';
 
@@ -62,8 +63,9 @@ export function PrazoForm({ onCriado }: Props) {
         Número do processo
         <input
           type="text"
+          inputMode="numeric"
           value={numeroProcesso}
-          onChange={(e) => setNumeroProcesso(e.target.value)}
+          onChange={(e) => setNumeroProcesso(mascaraProcesso(e.target.value))}
           placeholder="0001234-56.2026.8.26.0100"
         />
         {erros.numeroProcesso && <span className="erro-campo">{erros.numeroProcesso}</span>}
@@ -71,11 +73,11 @@ export function PrazoForm({ onCriado }: Props) {
 
       <label>
         Descrição
-        <input
-          type="text"
+        <textarea
           value={descricao}
           onChange={(e) => setDescricao(e.target.value)}
           placeholder="Contestação"
+          rows={3}
         />
         {erros.descricao && <span className="erro-campo">{erros.descricao}</span>}
       </label>

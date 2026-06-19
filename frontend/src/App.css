@@ -79,16 +79,24 @@ section h2 {
   font-size: 0.9rem;
 }
 
-.prazo-form input {
+.prazo-form input,
+.prazo-form textarea {
   padding: 0.55rem 0.65rem;
   border: 1px solid var(--borda);
   border-radius: 8px;
   font-size: 1rem;
   font-weight: 400;
+  font-family: inherit;
   color: var(--texto);
 }
 
-.prazo-form input:focus {
+.prazo-form textarea {
+  resize: vertical;
+  min-height: 2.5rem;
+}
+
+.prazo-form input:focus,
+.prazo-form textarea:focus {
   outline: none;
   border-color: var(--azul);
   box-shadow: 0 0 0 3px var(--azul-claro);
