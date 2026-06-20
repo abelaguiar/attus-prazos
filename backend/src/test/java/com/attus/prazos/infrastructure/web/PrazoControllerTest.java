@@ -1,7 +1,7 @@
-package com.attus.prazos.web;
+package com.attus.prazos.infrastructure.web;
 
-import static org.hamcrest.Matchers.hasSize;
 import static org.hamcrest.Matchers.hasItem;
+import static org.hamcrest.Matchers.hasSize;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.patch;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
@@ -10,8 +10,9 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
+import com.attus.prazos.application.port.out.PrazoRepositoryPort;
 import com.attus.prazos.domain.Prazo;
-import com.attus.prazos.repository.PrazoRepository;
+import com.attus.prazos.infrastructure.persistence.PrazoJpaRepository;
 import java.time.LocalDate;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -25,27 +26,30 @@ import org.springframework.web.context.WebApplicationContext;
 @SpringBootTest
 class PrazoControllerTest {
 
-    @Autowired
-    private WebApplicationContext context;
+    @Autowired private WebApplicationContext context;
 
-    @Autowired
-    private PrazoRepository repository;
+    @Autowired private PrazoRepositoryPort repository;
+
+    @Autowired private PrazoJpaRepository jpaRepository;
 
     private MockMvc mockMvc;
 
     @BeforeEach
     void setUp() {
-        mockMvc = MockMvcBuilders.webAppContextSetup(context)
-                .addFilters(new RequestIdFilter())
-                .build();
-        repository.deleteAll();
+        mockMvc =
+                MockMvcBuilders.webAppContextSetup(context)
+                        .addFilters(new RequestIdFilter())
+                        .build();
+        jpaRepository.deleteAll();
     }
 
     @Test
     void deveCriarPrazoComDadosValidos() throws Exception {
-        String corpo = """
+        String corpo =
+                """
                 {"numeroProcesso":"0001234-56.2026.8.26.0100","descricao":"Contestacao","dataPrazo":"%s"}
-                """.formatted(LocalDate.now().plusDays(30));
+                """
+                        .formatted(LocalDate.now().plusDays(30));
 
         mockMvc.perform(post("/prazos").contentType(MediaType.APPLICATION_JSON).content(corpo))
                 .andExpect(status().isCreated())
@@ -58,9 +62,11 @@ class PrazoControllerTest {
 
     @Test
     void deveRejeitarPrazoDuplicadoCom409() throws Exception {
-        String corpo = """
+        String corpo =
+                """
                 {"numeroProcesso":"0001234-56.2026.8.26.0100","descricao":"Contestacao","dataPrazo":"%s"}
-                """.formatted(LocalDate.now().plusDays(30));
+                """
+                        .formatted(LocalDate.now().plusDays(30));
 
         mockMvc.perform(post("/prazos").contentType(MediaType.APPLICATION_JSON).content(corpo))
                 .andExpect(status().isCreated());
@@ -73,27 +79,39 @@ class PrazoControllerTest {
     @Test
     void deveRejeitarDuplicadoComNumeroProcessoMascaradoENaoMascarado() throws Exception {
         String dataPrazo = LocalDate.now().plusDays(30).toString();
-        String corpoSemMascara = """
+        String corpoSemMascara =
+                """
                 {"numeroProcesso":"00012345620268260100","descricao":"Contestacao","dataPrazo":"%s"}
-                """.formatted(dataPrazo);
-        String corpoComMascara = """
+                """
+                        .formatted(dataPrazo);
+        String corpoComMascara =
+                """
                 {"numeroProcesso":"0001234-56.2026.8.26.0100","descricao":"Contestacao","dataPrazo":"%s"}
-                """.formatted(dataPrazo);
+                """
+                        .formatted(dataPrazo);
 
-        mockMvc.perform(post("/prazos").contentType(MediaType.APPLICATION_JSON).content(corpoSemMascara))
+        mockMvc.perform(
+                        post("/prazos")
+                                .contentType(MediaType.APPLICATION_JSON)
+                                .content(corpoSemMascara))
                 .andExpect(status().isCreated())
                 .andExpect(jsonPath("$.numeroProcesso").value("0001234-56.2026.8.26.0100"));
 
-        mockMvc.perform(post("/prazos").contentType(MediaType.APPLICATION_JSON).content(corpoComMascara))
+        mockMvc.perform(
+                        post("/prazos")
+                                .contentType(MediaType.APPLICATION_JSON)
+                                .content(corpoComMascara))
                 .andExpect(status().isConflict())
                 .andExpect(jsonPath("$.status").value(409));
     }
 
     @Test
     void deveAceitarDescricaoCom2000CaracteresAoCriar() throws Exception {
-        String corpo = """
+        String corpo =
+                """
                 {"numeroProcesso":"0001234-56.2026.8.26.0100","descricao":"%s","dataPrazo":"%s"}
-                """.formatted(descricaoComTamanho(2000), LocalDate.now().plusDays(30));
+                """
+                        .formatted(descricaoComTamanho(2000), LocalDate.now().plusDays(30));
 
         mockMvc.perform(post("/prazos").contentType(MediaType.APPLICATION_JSON).content(corpo))
                 .andExpect(status().isCreated())
@@ -102,9 +120,11 @@ class PrazoControllerTest {
 
     @Test
     void deveRejeitarDescricaoComMaisDe2000CaracteresAoCriar() throws Exception {
-        String corpo = """
+        String corpo =
+                """
                 {"numeroProcesso":"0001234-56.2026.8.26.0100","descricao":"%s","dataPrazo":"%s"}
-                """.formatted(descricaoComTamanho(2001), LocalDate.now().plusDays(30));
+                """
+                        .formatted(descricaoComTamanho(2001), LocalDate.now().plusDays(30));
 
         mockMvc.perform(post("/prazos").contentType(MediaType.APPLICATION_JSON).content(corpo))
                 .andExpect(status().isBadRequest())
@@ -113,7 +133,8 @@ class PrazoControllerTest {
 
     @Test
     void deveRejeitarPrazoInvalidoCom400EDetalheDosCampos() throws Exception {
-        String corpo = """
+        String corpo =
+                """
                 {"numeroProcesso":"","descricao":"","dataPrazo":"2020-01-01"}
                 """;
 
@@ -124,9 +145,11 @@ class PrazoControllerTest {
 
     @Test
     void deveRejeitarNumeroProcessoIncompleto() throws Exception {
-        String corpo = """
+        String corpo =
+                """
                 {"numeroProcesso":"0001234-56.2026","descricao":"Contestacao","dataPrazo":"%s"}
-                """.formatted(LocalDate.now().plusDays(30));
+                """
+                        .formatted(LocalDate.now().plusDays(30));
 
         mockMvc.perform(post("/prazos").contentType(MediaType.APPLICATION_JSON).content(corpo))
                 .andExpect(status().isBadRequest())
@@ -142,8 +165,12 @@ class PrazoControllerTest {
 
     @Test
     void deveMarcarPrazoComoCumprido() throws Exception {
-        Prazo prazo = repository.save(
-                new Prazo("0001234-56.2026.8.26.0100", "Contestacao", LocalDate.now().plusDays(10)));
+        Prazo prazo =
+                repository.salvar(
+                        Prazo.novo(
+                                "0001234-56.2026.8.26.0100",
+                                "Contestacao",
+                                LocalDate.now().plusDays(10)));
 
         mockMvc.perform(patch("/prazos/{id}/cumprir", prazo.getId()))
                 .andExpect(status().isOk())
@@ -153,16 +180,24 @@ class PrazoControllerTest {
 
     @Test
     void deveAtualizarPrazoComVersaoCorreta() throws Exception {
-        Prazo prazo = repository.save(
-                new Prazo("0001234-56.2026.8.26.0100", "Contestacao", LocalDate.now().plusDays(10)));
+        Prazo prazo =
+                repository.salvar(
+                        Prazo.novo(
+                                "0001234-56.2026.8.26.0100",
+                                "Contestacao",
+                                LocalDate.now().plusDays(10)));
         Long versao = prazo.getVersion();
 
-        String corpo = """
+        String corpo =
+                """
                 {"descricao":"Apelacao","dataPrazo":"%s","version":%d}
-                """.formatted(LocalDate.now().plusDays(20), versao);
+                """
+                        .formatted(LocalDate.now().plusDays(20), versao);
 
-        mockMvc.perform(put("/prazos/{id}", prazo.getId())
-                        .contentType(MediaType.APPLICATION_JSON).content(corpo))
+        mockMvc.perform(
+                        put("/prazos/{id}", prazo.getId())
+                                .contentType(MediaType.APPLICATION_JSON)
+                                .content(corpo))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.descricao").value("Apelacao"))
                 .andExpect(jsonPath("$.version").value(versao + 1));
@@ -170,51 +205,78 @@ class PrazoControllerTest {
 
     @Test
     void deveAceitarDescricaoCom2000CaracteresAoAtualizar() throws Exception {
-        Prazo prazo = repository.save(
-                new Prazo("0001234-56.2026.8.26.0100", "Contestacao", LocalDate.now().plusDays(10)));
+        Prazo prazo =
+                repository.salvar(
+                        Prazo.novo(
+                                "0001234-56.2026.8.26.0100",
+                                "Contestacao",
+                                LocalDate.now().plusDays(10)));
         String descricao = descricaoComTamanho(2000);
-        String corpo = """
+        String corpo =
+                """
                 {"descricao":"%s","dataPrazo":"%s","version":%d}
-                """.formatted(descricao, LocalDate.now().plusDays(20), prazo.getVersion());
+                """
+                        .formatted(descricao, LocalDate.now().plusDays(20), prazo.getVersion());
 
-        mockMvc.perform(put("/prazos/{id}", prazo.getId())
-                        .contentType(MediaType.APPLICATION_JSON).content(corpo))
+        mockMvc.perform(
+                        put("/prazos/{id}", prazo.getId())
+                                .contentType(MediaType.APPLICATION_JSON)
+                                .content(corpo))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.descricao").value(descricao));
     }
 
     @Test
     void deveRejeitarDescricaoComMaisDe2000CaracteresAoAtualizar() throws Exception {
-        Prazo prazo = repository.save(
-                new Prazo("0001234-56.2026.8.26.0100", "Contestacao", LocalDate.now().plusDays(10)));
-        String corpo = """
+        Prazo prazo =
+                repository.salvar(
+                        Prazo.novo(
+                                "0001234-56.2026.8.26.0100",
+                                "Contestacao",
+                                LocalDate.now().plusDays(10)));
+        String corpo =
+                """
                 {"descricao":"%s","dataPrazo":"%s","version":%d}
-                """.formatted(descricaoComTamanho(2001), LocalDate.now().plusDays(20), prazo.getVersion());
+                """
+                        .formatted(
+                                descricaoComTamanho(2001),
+                                LocalDate.now().plusDays(20),
+                                prazo.getVersion());
 
-        mockMvc.perform(put("/prazos/{id}", prazo.getId())
-                        .contentType(MediaType.APPLICATION_JSON).content(corpo))
+        mockMvc.perform(
+                        put("/prazos/{id}", prazo.getId())
+                                .contentType(MediaType.APPLICATION_JSON)
+                                .content(corpo))
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.fieldErrors[*].field").value(hasItem("descricao")));
     }
 
     @Test
     void deveRejeitarAtualizacaoComVersaoDesatualizadaCom409() throws Exception {
-        Prazo prazo = repository.save(
-                new Prazo("0001234-56.2026.8.26.0100", "Contestacao", LocalDate.now().plusDays(10)));
+        Prazo prazo =
+                repository.salvar(
+                        Prazo.novo(
+                                "0001234-56.2026.8.26.0100",
+                                "Contestacao",
+                                LocalDate.now().plusDays(10)));
         Long versaoDesatualizada = prazo.getVersion();
 
-        String corpo = """
+        String corpo =
+                """
                 {"descricao":"Apelacao","dataPrazo":"%s","version":%d}
-                """.formatted(LocalDate.now().plusDays(20), versaoDesatualizada);
+                """
+                        .formatted(LocalDate.now().plusDays(20), versaoDesatualizada);
 
-        // 1a edicao com a versao correta -> OK (a versao do prazo incrementa)
-        mockMvc.perform(put("/prazos/{id}", prazo.getId())
-                        .contentType(MediaType.APPLICATION_JSON).content(corpo))
+        mockMvc.perform(
+                        put("/prazos/{id}", prazo.getId())
+                                .contentType(MediaType.APPLICATION_JSON)
+                                .content(corpo))
                 .andExpect(status().isOk());
 
-        // 2a edicao reusando a versao ja desatualizada -> 409
-        mockMvc.perform(put("/prazos/{id}", prazo.getId())
-                        .contentType(MediaType.APPLICATION_JSON).content(corpo))
+        mockMvc.perform(
+                        put("/prazos/{id}", prazo.getId())
+                                .contentType(MediaType.APPLICATION_JSON)
+                                .content(corpo))
                 .andExpect(status().isConflict())
                 .andExpect(jsonPath("$.status").value(409));
     }
@@ -234,8 +296,7 @@ class PrazoControllerTest {
                 .andExpect(status().isFound())
                 .andExpect(header().string("Location", "/swagger-ui/index.html"));
 
-        mockMvc.perform(get("/swagger-ui/index.html"))
-                .andExpect(status().isOk());
+        mockMvc.perform(get("/swagger-ui/index.html")).andExpect(status().isOk());
     }
 
     private String descricaoComTamanho(int tamanho) {

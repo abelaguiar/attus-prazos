@@ -1,72 +1,59 @@
 package com.attus.prazos.domain;
 
-import jakarta.persistence.Column;
-import jakarta.persistence.Entity;
-import jakarta.persistence.EnumType;
-import jakarta.persistence.Enumerated;
-import jakarta.persistence.GeneratedValue;
-import jakarta.persistence.GenerationType;
-import jakarta.persistence.Id;
-import jakarta.persistence.Table;
-import jakarta.persistence.UniqueConstraint;
-import jakarta.persistence.Version;
-import java.nio.charset.StandardCharsets;
-import java.security.MessageDigest;
-import java.security.NoSuchAlgorithmException;
 import java.time.Instant;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
-import java.util.HexFormat;
 
-@Entity
-@Table(
-        name = "prazo",
-        uniqueConstraints = @UniqueConstraint(
-                name = "uk_prazo_processo_descricao_hash_data",
-                columnNames = {"numero_processo", "descricao_hash", "data_prazo"}))
+/**
+ * Entidade de dominio Prazo — um POJO puro, sem nenhuma dependencia de framework (JPA, Spring). O
+ * mapeamento de banco vive em infrastructure/persistence/PrazoJpaEntity.
+ */
 public class Prazo {
 
-    @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long id;
-
-    @Column(name = "numero_processo", nullable = false)
+    private final Long id;
     private String numeroProcesso;
-
-    @Column(nullable = false, columnDefinition = "text")
     private String descricao;
-
-    @Column(name = "descricao_hash", nullable = false, length = 64)
-    private String descricaoHash;
-
-    @Column(name = "data_prazo", nullable = false)
     private LocalDate dataPrazo;
-
-    /** EnumType.STRING grava "PENDENTE"/"CUMPRIDO" como texto (legivel e seguro a mudancas de ordem). */
-    @Enumerated(EnumType.STRING)
-    @Column(nullable = false)
     private StatusPrazo status;
-
-    @Column(name = "criado_em", nullable = false, updatable = false)
-    private Instant criadoEm;
-
-    @Column(name = "cumprido_em")
+    private final Instant criadoEm;
     private LocalDateTime cumpridoEm;
+    private final Long version;
 
-    @Version
-    private Long version;
-
-    protected Prazo() {
+    /** Reconstrucao a partir da persistencia (usado pelo mapper). */
+    public Prazo(
+            Long id,
+            String numeroProcesso,
+            String descricao,
+            LocalDate dataPrazo,
+            StatusPrazo status,
+            Instant criadoEm,
+            LocalDateTime cumpridoEm,
+            Long version) {
+        this.id = id;
+        this.numeroProcesso = numeroProcesso;
+        this.descricao = descricao;
+        this.dataPrazo = dataPrazo;
+        this.status = status;
+        this.criadoEm = criadoEm;
+        this.cumpridoEm = cumpridoEm;
+        this.version = version;
     }
 
-    /** Construtor de criacao: um prazo nasce sempre PENDENTE e com data de criacao. */
-    public Prazo(String numeroProcesso, String descricao, LocalDate dataPrazo) {
-        this.numeroProcesso = NumeroProcesso.normalizar(numeroProcesso);
-        this.descricao = descricao;
-        this.descricaoHash = hashDescricao(descricao);
-        this.dataPrazo = dataPrazo;
-        this.status = StatusPrazo.PENDENTE;
-        this.criadoEm = Instant.now();
+    /**
+     * Criacao de um novo prazo: nasce PENDENTE, com data de criacao, ainda sem id/version. O numero
+     * do processo e' normalizado para a forma canonica (so digitos) — regra de dominio, para que
+     * mascarado e nao-mascarado sejam o mesmo prazo.
+     */
+    public static Prazo novo(String numeroProcesso, String descricao, LocalDate dataPrazo) {
+        return new Prazo(
+                null,
+                NumeroProcesso.normalizar(numeroProcesso),
+                descricao,
+                dataPrazo,
+                StatusPrazo.PENDENTE,
+                Instant.now(),
+                null,
+                null);
     }
 
     public void marcarComoCumprido() {
@@ -76,25 +63,7 @@ public class Prazo {
 
     public void atualizar(String descricao, LocalDate dataPrazo) {
         this.descricao = descricao;
-        this.descricaoHash = hashDescricao(descricao);
         this.dataPrazo = dataPrazo;
-    }
-
-    /**
-     * descricaoHash sustenta o indice unico sem indexar o text completo; calculamos junto da
-     * descricao para mante-los sempre em sincronia.
-     */
-    private String hashDescricao(String valor) {
-        if (valor == null) {
-            return null;
-        }
-        try {
-            MessageDigest digest = MessageDigest.getInstance("SHA-256");
-            byte[] hash = digest.digest(valor.getBytes(StandardCharsets.UTF_8));
-            return HexFormat.of().formatHex(hash);
-        } catch (NoSuchAlgorithmException ex) {
-            throw new IllegalStateException("SHA-256 indisponivel", ex);
-        }
     }
 
     /** Condicao DERIVADA: nao existe coluna para isso, calculamos na hora. */
@@ -112,10 +81,6 @@ public class Prazo {
 
     public String getDescricao() {
         return descricao;
-    }
-
-    public String getDescricaoHash() {
-        return descricaoHash;
     }
 
     public LocalDate getDataPrazo() {

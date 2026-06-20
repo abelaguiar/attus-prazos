@@ -1,4 +1,4 @@
-package com.attus.prazos.exception;
+package com.attus.prazos.domain.exception;
 
 public class PrazoDuplicadoException extends RuntimeException {
 

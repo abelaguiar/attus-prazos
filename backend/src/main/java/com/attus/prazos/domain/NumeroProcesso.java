@@ -2,8 +2,7 @@ package com.attus.prazos.domain;
 
 public final class NumeroProcesso {
 
-    private NumeroProcesso() {
-    }
+    private NumeroProcesso() {}
 
     public static String normalizar(String valor) {
         if (valor == null) {
@@ -17,12 +16,13 @@ public final class NumeroProcesso {
         if (digitos == null || digitos.length() != 20) {
             return valor;
         }
-        return "%s-%s.%s.%s.%s.%s".formatted(
-                digitos.substring(0, 7),
-                digitos.substring(7, 9),
-                digitos.substring(9, 13),
-                digitos.substring(13, 14),
-                digitos.substring(14, 16),
-                digitos.substring(16, 20));
+        return "%s-%s.%s.%s.%s.%s"
+                .formatted(
+                        digitos.substring(0, 7),
+                        digitos.substring(7, 9),
+                        digitos.substring(9, 13),
+                        digitos.substring(13, 14),
+                        digitos.substring(14, 16),
+                        digitos.substring(16, 20));
     }
 }

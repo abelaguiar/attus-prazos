@@ -1,4 +1,4 @@
-package com.attus.prazos.config;
+package com.attus.prazos.infrastructure.web;
 
 import org.springframework.context.annotation.Configuration;
 import org.springframework.web.servlet.config.annotation.CorsRegistry;
