@@ -21,7 +21,7 @@ public record CriarPrazoRequest(
         String numeroProcesso,
 
         @Schema(description = "Descricao objetiva do ato ou compromisso",
-                example = "Contestacao", maxLength = 255)
+                example = "Contestacao", maxLength = 2000)
         @NotBlank(message = "descricao e' obrigatoria")
         @Size(max = 2000, message = "descricao deve ter no maximo 2000 caracteres")
         String descricao,

@@ -11,7 +11,7 @@ import java.time.LocalDate;
 public record AtualizarPrazoRequest(
 
         @Schema(description = "Nova descricao objetiva do ato ou compromisso",
-                example = "Apelacao", maxLength = 255)
+                example = "Apelacao", maxLength = 2000)
         @NotBlank(message = "descricao e' obrigatoria")
         @Size(max = 2000, message = "descricao deve ter no maximo 2000 caracteres")
         String descricao,
