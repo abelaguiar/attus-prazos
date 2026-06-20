@@ -22,6 +22,12 @@ A API recebe e devolve DTOs (`CriarPrazoRequest`, `PrazoResponse`), não a entid
 o contrato HTTP do modelo de banco: dá pra mudar o mapeamento sem quebrar a API e controlar
 exatamente o que entra e sai.
 
+## Documentação da API (OpenAPI/Swagger)
+
+A API é documentada com springdoc-openapi: o schema OpenAPI sai em `/v3/api-docs` e a UI
+interativa em `/swagger-ui.html`. Os DTOs trazem anotações `@Schema` com descrição e exemplos,
+então o contrato fica navegável sem manter documentação à parte.
+
 ## Português no domínio, inglês na infra
 
 Os nomes de negócio ficam em português (`Prazo`, `numeroProcesso`, `marcarComoCumprido`) porque
@@ -45,7 +51,9 @@ Parte 2. No console o formato fica legível; no arquivo, estruturado.
 ## Validação no front e no back
 
 O front valida para dar resposta rápida ao usuário, mas a validação que conta é a do back (Bean
-Validation). O servidor nunca confia no que vem do cliente.
+Validation). O servidor nunca confia no que vem do cliente. O `numeroProcesso`, por exemplo, é
+mascarado no formato CNJ enquanto se digita e exige os 20 dígitos nos dois lados: no front, antes
+de enviar; no back, via `@Pattern` (que aceita o valor mascarado ou os 20 dígitos crus).
 
 ## Unicidade garantida no banco
 
@@ -87,7 +95,6 @@ só configuração de datasource (é o que o profile `docker` faz).
   de 409.
 - ETag e `If-Match` na edição, levando a concorrência otimista para os cabeçalhos HTTP em vez de
   um campo no corpo.
-- OpenAPI/Swagger para documentação interativa da API.
 - Paginação e filtros no `GET /prazos`.
 - Autenticação e auditoria de quem cumpriu cada prazo.
 - Cálculo de prazo em dias úteis, considerando feriados forenses.

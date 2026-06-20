@@ -11,7 +11,7 @@ uma análise de incidente em [`docs/INCIDENT_ANALYSIS_LOST_UPDATE.md`](docs/INCI
 
 | Camada | Tecnologia |
 |---|---|
-| Back-end | Java 21, Spring Boot 4 (Web MVC, Data JPA, Bean Validation) |
+| Back-end | Java 21, Spring Boot 4 (Web MVC, Data JPA, Bean Validation), springdoc-openapi (Swagger) |
 | Banco | PostgreSQL via Docker; H2 em memória para rodar local e nos testes |
 | Logs | SLF4J + Logback em JSON (ECS), com um `requestId` por requisição |
 | Testes | JUnit 5, Mockito, Spring MockMvc |
@@ -111,6 +111,11 @@ Documentacao interativa:
 
 Toda resposta traz o header `X-Request-Id`, que casa com os logs. O campo `version` é devolvido
 em todas as respostas e precisa ser enviado de volta no `PUT` (é o controle de concorrência).
+
+O `numeroProcesso` segue o padrão CNJ (20 dígitos). A API aceita tanto o valor mascarado
+(`0001234-56.2026.8.26.0100`) quanto os 20 dígitos crus, armazena só os dígitos e devolve
+formatado. Número incompleto é rejeitado com `400`. A `descricao` é texto livre de até 2000
+caracteres.
 
 Criar um prazo:
 
