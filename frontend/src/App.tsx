@@ -1,23 +1,39 @@
 import { useEffect, useState } from 'react';
 import './App.css';
-import { cumprirPrazo, listarPrazos } from './api';
+import { cumprirPrazo, getToken, listarPrazos, logout, setOnUnauthorized } from './api';
+import { AuthForm } from './components/AuthForm';
 import { PrazoForm } from './components/PrazoForm';
 import { PrazoEditForm } from './components/PrazoEditForm';
 import { PrazoList } from './components/PrazoList';
 import type { Prazo } from './types';
 
 export default function App() {
+  const [autenticado, setAutenticado] = useState(() => Boolean(getToken()));
   const [prazos, setPrazos] = useState<Prazo[]>([]);
   const [carregando, setCarregando] = useState(true);
   const [erro, setErro] = useState<string | null>(null);
   const [prazoEmEdicao, setPrazoEmEdicao] = useState<Prazo | null>(null);
 
+  // Token caiu (expirado/invalido) em qualquer chamada -> volta para a tela de login.
   useEffect(() => {
+    setOnUnauthorized(() => setAutenticado(false));
+  }, []);
+
+  useEffect(() => {
+    if (!autenticado) return;
     listarPrazos()
       .then(setPrazos)
       .catch(() => setErro('Não foi possível carregar os prazos. O back-end está rodando em :8080?'))
       .finally(() => setCarregando(false));
-  }, []);
+  }, [autenticado]);
+
+  function handleLogout() {
+    logout();
+    setAutenticado(false);
+    setPrazos([]);
+    setPrazoEmEdicao(null);
+    setErro(null);
+  }
 
   async function recarregarPrazos() {
     try {
@@ -56,12 +72,34 @@ export default function App() {
     await recarregarPrazos();
   }
 
+  if (!autenticado) {
+    return (
+      <>
+        <header className="app-header">
+          <div className="app-header__inner">
+            <h1>Monitor de Prazos Processuais</h1>
+            <p className="subtitulo">Entre ou crie uma conta para acompanhar os prazos.</p>
+          </div>
+        </header>
+
+        <main className="container">
+          <AuthForm onAutenticado={() => setAutenticado(true)} />
+        </main>
+      </>
+    );
+  }
+
   return (
     <>
       <header className="app-header">
-        <div className="app-header__inner">
-          <h1>Monitor de Prazos Processuais</h1>
-          <p className="subtitulo">Cadastre e acompanhe os prazos dos processos.</p>
+        <div className="app-header__inner app-header__inner--row">
+          <div>
+            <h1>Monitor de Prazos Processuais</h1>
+            <p className="subtitulo">Cadastre e acompanhe os prazos dos processos.</p>
+          </div>
+          <button type="button" className="btn btn-ghost btn-sm" onClick={handleLogout}>
+            Sair
+          </button>
         </div>
       </header>
 
