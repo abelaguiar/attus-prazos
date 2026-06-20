@@ -17,6 +17,7 @@ import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
+import org.springframework.web.servlet.resource.NoResourceFoundException;
 
 @RestControllerAdvice
 public class GlobalExceptionHandler {
@@ -124,6 +125,19 @@ public class GlobalExceptionHandler {
                 "Erro de validação",
                 request.getRequestURI(),
                 fieldErrors);
+    }
+
+    @ExceptionHandler(NoResourceFoundException.class)
+    @ResponseStatus(HttpStatus.NOT_FOUND)
+    public ApiError handleRotaInexistente(NoResourceFoundException ex, HttpServletRequest request) {
+        log.warn("Rota inexistente: {}", request.getRequestURI());
+        return new ApiError(
+                Instant.now(),
+                HttpStatus.NOT_FOUND.value(),
+                "Not Found",
+                "Recurso nao encontrado",
+                request.getRequestURI(),
+                List.of());
     }
 
     @ExceptionHandler(Exception.class)

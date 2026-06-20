@@ -19,15 +19,8 @@ WHERE numero_processo <> regexp_replace(numero_processo, '\D', '', 'g')
 ALTER TABLE IF EXISTS prazo
     ALTER COLUMN descricao_hash SET NOT NULL;
 
-DO $$
-BEGIN
-    IF NOT EXISTS (
-        SELECT 1
-        FROM pg_constraint
-        WHERE conname = 'uk_prazo_processo_descricao_hash_data'
-    ) THEN
-        ALTER TABLE prazo
-            ADD CONSTRAINT uk_prazo_processo_descricao_hash_data
-            UNIQUE (numero_processo, descricao_hash, data_prazo);
-    END IF;
-END $$;
+-- Indice unico idempotente. Evitamos o bloco DO $$...$$ porque o ScriptUtils do Spring
+-- quebra o script nos ';' internos do bloco. CREATE UNIQUE INDEX IF NOT EXISTS e' nativo,
+-- idempotente, e reaproveita o indice ja criado pelo Hibernate caso exista (mesmo nome).
+CREATE UNIQUE INDEX IF NOT EXISTS uk_prazo_processo_descricao_hash_data
+    ON prazo (numero_processo, descricao_hash, data_prazo);
