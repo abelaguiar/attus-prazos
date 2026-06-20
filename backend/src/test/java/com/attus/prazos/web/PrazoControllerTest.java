@@ -226,4 +226,8 @@ class PrazoControllerTest {
         mockMvc.perform(get("/swagger-ui/index.html"))
                 .andExpect(status().isOk());
     }
+
+    private String descricaoComTamanho(int tamanho) {
+        return "a".repeat(tamanho);
+    }
 }
