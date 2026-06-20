@@ -37,8 +37,8 @@ public class PrazoMapper {
     }
 
     /**
-     * Hash da descricao para a constraint de unicidade. E' um detalhe de persistencia
-     * (existe so para o indice), por isso vive aqui, e nao no dominio.
+     * Hash da descricao para a constraint de unicidade. E' um detalhe de persistencia (existe so
+     * para o indice), por isso vive aqui, e nao no dominio.
      */
     private String hashDescricao(String valor) {
         if (valor == null) {

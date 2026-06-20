@@ -5,9 +5,8 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 
 /**
- * Entidade de dominio Prazo — um POJO puro, sem nenhuma dependencia de
- * framework (JPA, Spring). O mapeamento de banco vive em
- * infrastructure/persistence/PrazoJpaEntity.
+ * Entidade de dominio Prazo — um POJO puro, sem nenhuma dependencia de framework (JPA, Spring). O
+ * mapeamento de banco vive em infrastructure/persistence/PrazoJpaEntity.
  */
 public class Prazo {
 
@@ -21,8 +20,15 @@ public class Prazo {
     private final Long version;
 
     /** Reconstrucao a partir da persistencia (usado pelo mapper). */
-    public Prazo(Long id, String numeroProcesso, String descricao, LocalDate dataPrazo,
-            StatusPrazo status, Instant criadoEm, LocalDateTime cumpridoEm, Long version) {
+    public Prazo(
+            Long id,
+            String numeroProcesso,
+            String descricao,
+            LocalDate dataPrazo,
+            StatusPrazo status,
+            Instant criadoEm,
+            LocalDateTime cumpridoEm,
+            Long version) {
         this.id = id;
         this.numeroProcesso = numeroProcesso;
         this.descricao = descricao;
@@ -34,13 +40,20 @@ public class Prazo {
     }
 
     /**
-     * Criacao de um novo prazo: nasce PENDENTE, com data de criacao, ainda sem id/version.
-     * O numero do processo e' normalizado para a forma canonica (so digitos) — regra de dominio,
-     * para que mascarado e nao-mascarado sejam o mesmo prazo.
+     * Criacao de um novo prazo: nasce PENDENTE, com data de criacao, ainda sem id/version. O numero
+     * do processo e' normalizado para a forma canonica (so digitos) — regra de dominio, para que
+     * mascarado e nao-mascarado sejam o mesmo prazo.
      */
     public static Prazo novo(String numeroProcesso, String descricao, LocalDate dataPrazo) {
-        return new Prazo(null, NumeroProcesso.normalizar(numeroProcesso), descricao, dataPrazo,
-                StatusPrazo.PENDENTE, Instant.now(), null, null);
+        return new Prazo(
+                null,
+                NumeroProcesso.normalizar(numeroProcesso),
+                descricao,
+                dataPrazo,
+                StatusPrazo.PENDENTE,
+                Instant.now(),
+                null,
+                null);
     }
 
     public void marcarComoCumprido() {

@@ -20,18 +20,18 @@ import org.mockito.junit.jupiter.MockitoExtension;
 @ExtendWith(MockitoExtension.class)
 class PrazoServiceTest {
 
-    @Mock
-    private PrazoRepositoryPort repository;
+    @Mock private PrazoRepositoryPort repository;
 
-    @InjectMocks
-    private PrazoService service;
+    @InjectMocks private PrazoService service;
 
     @Test
     void criarDeveNascerComStatusPendente() {
-        when(repository.salvar(any(Prazo.class))).thenAnswer(invocation -> invocation.getArgument(0));
+        when(repository.salvar(any(Prazo.class)))
+                .thenAnswer(invocation -> invocation.getArgument(0));
 
-        Prazo resultado = service.criar("0001234-56.2026.8.26.0100", "Contestacao",
-                LocalDate.now().plusDays(10));
+        Prazo resultado =
+                service.criar(
+                        "0001234-56.2026.8.26.0100", "Contestacao", LocalDate.now().plusDays(10));
 
         assertThat(resultado.getStatus()).isEqualTo(StatusPrazo.PENDENTE);
         assertThat(resultado.getNumeroProcesso()).isEqualTo("00012345620268260100");
@@ -40,9 +40,11 @@ class PrazoServiceTest {
 
     @Test
     void marcarComoCumpridoDeveAtualizarStatusEData() {
-        Prazo prazo = Prazo.novo("0001234-56.2026.8.26.0100", "Contestacao", LocalDate.now().plusDays(5));
+        Prazo prazo =
+                Prazo.novo("0001234-56.2026.8.26.0100", "Contestacao", LocalDate.now().plusDays(5));
         when(repository.buscarPorId(1L)).thenReturn(Optional.of(prazo));
-        when(repository.salvar(any(Prazo.class))).thenAnswer(invocation -> invocation.getArgument(0));
+        when(repository.salvar(any(Prazo.class)))
+                .thenAnswer(invocation -> invocation.getArgument(0));
 
         Prazo resultado = service.marcarComoCumprido(1L);
 

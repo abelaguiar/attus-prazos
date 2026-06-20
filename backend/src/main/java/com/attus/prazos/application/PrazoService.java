@@ -28,8 +28,11 @@ public class PrazoService implements PrazoUseCase {
     public Prazo criar(String numeroProcesso, String descricao, LocalDate dataPrazo) {
         Prazo prazo = Prazo.novo(numeroProcesso, descricao, dataPrazo);
         Prazo salvo = repository.salvar(prazo);
-        log.info("Prazo criado id={} numeroProcesso={} dataPrazo={}",
-                salvo.getId(), salvo.getNumeroProcesso(), dataPrazo);
+        log.info(
+                "Prazo criado id={} numeroProcesso={} dataPrazo={}",
+                salvo.getId(),
+                salvo.getNumeroProcesso(),
+                dataPrazo);
         return salvo;
     }
 
@@ -42,8 +45,7 @@ public class PrazoService implements PrazoUseCase {
     @Override
     @Transactional(readOnly = true)
     public Prazo buscarPorId(Long id) {
-        return repository.buscarPorId(id)
-                .orElseThrow(() -> new PrazoNaoEncontradoException(id));
+        return repository.buscarPorId(id).orElseThrow(() -> new PrazoNaoEncontradoException(id));
     }
 
     @Override
@@ -52,7 +54,8 @@ public class PrazoService implements PrazoUseCase {
         Prazo prazo = buscarPorId(id);
         prazo.marcarComoCumprido();
         Prazo salvo = repository.salvar(prazo);
-        log.info("Prazo cumprido id={} numeroProcesso={}", salvo.getId(), salvo.getNumeroProcesso());
+        log.info(
+                "Prazo cumprido id={} numeroProcesso={}", salvo.getId(), salvo.getNumeroProcesso());
         return salvo;
     }
 
@@ -61,8 +64,11 @@ public class PrazoService implements PrazoUseCase {
     public Prazo atualizar(Long id, String descricao, LocalDate dataPrazo, Long versaoCliente) {
         Prazo prazo = buscarPorId(id);
         if (!prazo.getVersion().equals(versaoCliente)) {
-            log.warn("Conflito de versão id={} versaoCliente={} versaoAtual={}",
-                    id, versaoCliente, prazo.getVersion());
+            log.warn(
+                    "Conflito de versão id={} versaoCliente={} versaoAtual={}",
+                    id,
+                    versaoCliente,
+                    prazo.getVersion());
             throw new ConflitoDeVersaoException(id);
         }
         prazo.atualizar(descricao, dataPrazo);

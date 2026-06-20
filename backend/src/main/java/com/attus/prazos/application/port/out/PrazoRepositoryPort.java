@@ -5,8 +5,8 @@ import java.util.List;
 import java.util.Optional;
 
 /**
- * Porta de SAIDA: o que a aplicacao precisa da persistencia, falando a
- * lingua do dominio (Prazo). A infraestrutura implementa esta interface.
+ * Porta de SAIDA: o que a aplicacao precisa da persistencia, falando a lingua do dominio (Prazo). A
+ * infraestrutura implementa esta interface.
  */
 public interface PrazoRepositoryPort {
 

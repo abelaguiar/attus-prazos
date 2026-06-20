@@ -39,70 +39,94 @@ public class PrazoController {
     @PostMapping
     @ResponseStatus(HttpStatus.CREATED)
     @Operation(summary = "Cria um prazo processual")
-    @ApiResponse(responseCode = "201", description = "Prazo criado",
+    @ApiResponse(
+            responseCode = "201",
+            description = "Prazo criado",
             content = @Content(schema = @Schema(implementation = PrazoResponse.class)))
-    @ApiResponse(responseCode = "400", description = "Entrada invalida",
+    @ApiResponse(
+            responseCode = "400",
+            description = "Entrada invalida",
             content = @Content(schema = @Schema(implementation = ApiError.class)))
-    @ApiResponse(responseCode = "409", description = "Prazo duplicado",
+    @ApiResponse(
+            responseCode = "409",
+            description = "Prazo duplicado",
             content = @Content(schema = @Schema(implementation = ApiError.class)))
     public PrazoResponse criar(@Valid @RequestBody CriarPrazoRequest request) {
-        Prazo prazo = useCase.criar(
-                request.numeroProcesso(),
-                request.descricao(),
-                request.dataPrazo());
+        Prazo prazo =
+                useCase.criar(request.numeroProcesso(), request.descricao(), request.dataPrazo());
         return PrazoResponse.from(prazo);
     }
 
     @GetMapping
     @Operation(summary = "Lista os prazos processuais")
-    @ApiResponse(responseCode = "200", description = "Prazos encontrados",
-            content = @Content(array = @ArraySchema(schema = @Schema(implementation = PrazoResponse.class))))
+    @ApiResponse(
+            responseCode = "200",
+            description = "Prazos encontrados",
+            content =
+                    @Content(
+                            array =
+                                    @ArraySchema(
+                                            schema =
+                                                    @Schema(implementation = PrazoResponse.class))))
     public List<PrazoResponse> listar() {
-        return useCase.listar().stream()
-                .map(PrazoResponse::from)
-                .toList();
+        return useCase.listar().stream().map(PrazoResponse::from).toList();
     }
 
     @GetMapping("/{id}")
     @Operation(summary = "Busca um prazo processual por id")
-    @ApiResponse(responseCode = "200", description = "Prazo encontrado",
+    @ApiResponse(
+            responseCode = "200",
+            description = "Prazo encontrado",
             content = @Content(schema = @Schema(implementation = PrazoResponse.class)))
-    @ApiResponse(responseCode = "404", description = "Prazo nao encontrado",
+    @ApiResponse(
+            responseCode = "404",
+            description = "Prazo nao encontrado",
             content = @Content(schema = @Schema(implementation = ApiError.class)))
-    public PrazoResponse buscarPorId(@Parameter(description = "Identificador do prazo", example = "1")
-            @PathVariable Long id) {
+    public PrazoResponse buscarPorId(
+            @Parameter(description = "Identificador do prazo", example = "1") @PathVariable
+                    Long id) {
         return PrazoResponse.from(useCase.buscarPorId(id));
     }
 
     @PutMapping("/{id}")
     @Operation(summary = "Atualiza um prazo processual")
-    @ApiResponse(responseCode = "200", description = "Prazo atualizado",
+    @ApiResponse(
+            responseCode = "200",
+            description = "Prazo atualizado",
             content = @Content(schema = @Schema(implementation = PrazoResponse.class)))
-    @ApiResponse(responseCode = "400", description = "Entrada invalida",
+    @ApiResponse(
+            responseCode = "400",
+            description = "Entrada invalida",
             content = @Content(schema = @Schema(implementation = ApiError.class)))
-    @ApiResponse(responseCode = "404", description = "Prazo nao encontrado",
+    @ApiResponse(
+            responseCode = "404",
+            description = "Prazo nao encontrado",
             content = @Content(schema = @Schema(implementation = ApiError.class)))
-    @ApiResponse(responseCode = "409", description = "Conflito de versao",
+    @ApiResponse(
+            responseCode = "409",
+            description = "Conflito de versao",
             content = @Content(schema = @Schema(implementation = ApiError.class)))
-    public PrazoResponse atualizar(@Parameter(description = "Identificador do prazo", example = "1")
-            @PathVariable Long id,
+    public PrazoResponse atualizar(
+            @Parameter(description = "Identificador do prazo", example = "1") @PathVariable Long id,
             @Valid @RequestBody AtualizarPrazoRequest request) {
-        Prazo prazo = useCase.atualizar(
-                id,
-                request.descricao(),
-                request.dataPrazo(),
-                request.version());
+        Prazo prazo =
+                useCase.atualizar(id, request.descricao(), request.dataPrazo(), request.version());
         return PrazoResponse.from(prazo);
     }
 
     @PatchMapping("/{id}/cumprir")
     @Operation(summary = "Marca um prazo processual como cumprido")
-    @ApiResponse(responseCode = "200", description = "Prazo cumprido",
+    @ApiResponse(
+            responseCode = "200",
+            description = "Prazo cumprido",
             content = @Content(schema = @Schema(implementation = PrazoResponse.class)))
-    @ApiResponse(responseCode = "404", description = "Prazo nao encontrado",
+    @ApiResponse(
+            responseCode = "404",
+            description = "Prazo nao encontrado",
             content = @Content(schema = @Schema(implementation = ApiError.class)))
-    public PrazoResponse cumprir(@Parameter(description = "Identificador do prazo", example = "1")
-            @PathVariable Long id) {
+    public PrazoResponse cumprir(
+            @Parameter(description = "Identificador do prazo", example = "1") @PathVariable
+                    Long id) {
         return PrazoResponse.from(useCase.marcarComoCumprido(id));
     }
 }

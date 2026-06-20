@@ -13,13 +13,13 @@ public class OpenApiConfig {
     @Bean
     public OpenAPI apiInfo() {
         return new OpenAPI()
-                .info(new Info()
-                        .title("Monitor de Prazos Processuais API")
-                        .description("API para cadastrar, editar, listar e cumprir prazos processuais.")
-                        .version("v1")
-                        .contact(new Contact()
-                                .name("Attus Prazos"))
-                        .license(new License()
-                                .name("MIT")));
+                .info(
+                        new Info()
+                                .title("Monitor de Prazos Processuais API")
+                                .description(
+                                        "API para cadastrar, editar, listar e cumprir prazos processuais.")
+                                .version("v1")
+                                .contact(new Contact().name("Attus Prazos"))
+                                .license(new License().name("MIT")));
     }
 }

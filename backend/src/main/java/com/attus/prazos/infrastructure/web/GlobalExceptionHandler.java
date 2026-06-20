@@ -22,7 +22,8 @@ public class GlobalExceptionHandler {
 
     @ExceptionHandler(PrazoNaoEncontradoException.class)
     @ResponseStatus(HttpStatus.NOT_FOUND)
-    public ApiError handleNaoEncontrado(PrazoNaoEncontradoException ex, HttpServletRequest request) {
+    public ApiError handleNaoEncontrado(
+            PrazoNaoEncontradoException ex, HttpServletRequest request) {
         log.warn("Recurso não encontrado em {}: {}", request.getRequestURI(), ex.getMessage());
         return new ApiError(
                 Instant.now(),
@@ -48,10 +49,12 @@ public class GlobalExceptionHandler {
 
     @ExceptionHandler(MethodArgumentNotValidException.class)
     @ResponseStatus(HttpStatus.BAD_REQUEST)
-    public ApiError handleValidacao(MethodArgumentNotValidException ex, HttpServletRequest request) {
-        List<ApiError.FieldError> fieldErrors = ex.getBindingResult().getFieldErrors().stream()
-                .map(fe -> new ApiError.FieldError(fe.getField(), fe.getDefaultMessage()))
-                .toList();
+    public ApiError handleValidacao(
+            MethodArgumentNotValidException ex, HttpServletRequest request) {
+        List<ApiError.FieldError> fieldErrors =
+                ex.getBindingResult().getFieldErrors().stream()
+                        .map(fe -> new ApiError.FieldError(fe.getField(), fe.getDefaultMessage()))
+                        .toList();
         log.warn("Requisição inválida em {}: {}", request.getRequestURI(), fieldErrors);
         return new ApiError(
                 Instant.now(),

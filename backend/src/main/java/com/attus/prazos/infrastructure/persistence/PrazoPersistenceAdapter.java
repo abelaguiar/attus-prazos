@@ -14,8 +14,8 @@ import org.springframework.stereotype.Component;
 /**
  * Adaptador de SAIDA: implementa a porta usando Spring Data + JPA.
  *
- * <p>Aqui (e somente aqui) traduzimos excecoes de INFRAESTRUTURA para
- * excecoes de DOMINIO, para que as camadas de cima nao conhecam JPA/Hibernate.
+ * <p>Aqui (e somente aqui) traduzimos excecoes de INFRAESTRUTURA para excecoes de DOMINIO, para que
+ * as camadas de cima nao conhecam JPA/Hibernate.
  */
 @Component
 public class PrazoPersistenceAdapter implements PrazoRepositoryPort {

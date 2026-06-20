@@ -16,16 +16,16 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 
 /**
- * Mapeamento JPA do Prazo — detalhe de infraestrutura. O dominio
- * (com.attus.prazos.domain.Prazo) nao conhece esta classe; a conversao
- * acontece no PrazoMapper.
+ * Mapeamento JPA do Prazo — detalhe de infraestrutura. O dominio (com.attus.prazos.domain.Prazo)
+ * nao conhece esta classe; a conversao acontece no PrazoMapper.
  */
 @Entity
 @Table(
         name = "prazo",
-        uniqueConstraints = @UniqueConstraint(
-                name = "uk_prazo_processo_descricao_hash_data",
-                columnNames = {"numero_processo", "descricao_hash", "data_prazo"}))
+        uniqueConstraints =
+                @UniqueConstraint(
+                        name = "uk_prazo_processo_descricao_hash_data",
+                        columnNames = {"numero_processo", "descricao_hash", "data_prazo"}))
 public class PrazoJpaEntity {
 
     @Id
@@ -39,9 +39,9 @@ public class PrazoJpaEntity {
     private String descricao;
 
     /**
-     * Hash SHA-256 da descricao. Sustenta o indice unico sem indexar o {@code text} completo
-     * (que pode estourar o limite de entrada do B-tree no PostgreSQL). Derivado da descricao
-     * no PrazoMapper.
+     * Hash SHA-256 da descricao. Sustenta o indice unico sem indexar o {@code text} completo (que
+     * pode estourar o limite de entrada do B-tree no PostgreSQL). Derivado da descricao no
+     * PrazoMapper.
      */
     @Column(name = "descricao_hash", nullable = false, length = 64)
     private String descricaoHash;
@@ -59,11 +59,9 @@ public class PrazoJpaEntity {
     @Column(name = "cumprido_em")
     private LocalDateTime cumpridoEm;
 
-    @Version
-    private Long version;
+    @Version private Long version;
 
-    protected PrazoJpaEntity() {
-    }
+    protected PrazoJpaEntity() {}
 
     public Long getId() {
         return id;

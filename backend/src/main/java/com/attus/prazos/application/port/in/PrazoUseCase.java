@@ -5,8 +5,8 @@ import java.time.LocalDate;
 import java.util.List;
 
 /**
- * Porta de ENTRADA: os casos de uso que a aplicacao oferece. O controller
- * (adaptador de entrada) depende desta interface, nao da implementacao.
+ * Porta de ENTRADA: os casos de uso que a aplicacao oferece. O controller (adaptador de entrada)
+ * depende desta interface, nao da implementacao.
  */
 public interface PrazoUseCase {
 
