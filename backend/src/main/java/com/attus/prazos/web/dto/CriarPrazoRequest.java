@@ -14,10 +14,10 @@ public record CriarPrazoRequest(
         @Schema(description = "Número do processo vinculado ao prazo",
                 example = "0001234-56.2026.8.26.0100", maxLength = 25)
         @NotBlank(message = "O número do processo é obrigatório.")
-        // O '?' final torna o padrão opcional de propósito: assim o campo vazio é reportado
-        // apenas pelo @NotBlank, sem duplicar a mensagem com a do @Pattern.
+        // A alternativa \s* deixa valores em branco (vazio ou só espaços) casarem com o padrão,
+        // de modo que esse caso seja reportado apenas pelo @NotBlank, sem duplicar a mensagem.
         @Pattern(
-                regexp = "(\\d{20}|\\d{7}-\\d{2}\\.\\d{4}\\.\\d\\.\\d{2}\\.\\d{4})?",
+                regexp = "(\\s*|\\d{20}|\\d{7}-\\d{2}\\.\\d{4}\\.\\d\\.\\d{2}\\.\\d{4})",
                 message = "O número do processo deve ter os 20 dígitos do padrão CNJ.")
         @Size(max = 25, message = "O número do processo deve ter no máximo 25 caracteres.")
         String numeroProcesso,

@@ -134,6 +134,18 @@ class PrazoControllerTest {
     }
 
     @Test
+    void deveReportarNumeroProcessoEmBrancoComUmUnicoErro() throws Exception {
+        String corpo = """
+                {"numeroProcesso":"   ","descricao":"Contestacao","dataPrazo":"%s"}
+                """.formatted(LocalDate.now().plusDays(30));
+
+        // Em branco deve ser reportado so pelo @NotBlank; o @Pattern nao pode duplicar a mensagem.
+        mockMvc.perform(post("/prazos").contentType(MediaType.APPLICATION_JSON).content(corpo))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.fieldErrors[?(@.field == 'numeroProcesso')]", hasSize(1)));
+    }
+
+    @Test
     void deveRetornar404ParaPrazoInexistente() throws Exception {
         mockMvc.perform(get("/prazos/999"))
                 .andExpect(status().isNotFound())
