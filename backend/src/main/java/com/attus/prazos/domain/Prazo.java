@@ -15,7 +15,6 @@ import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.time.Instant;
 import java.time.LocalDate;
-import java.time.LocalDateTime;
 import java.util.HexFormat;
 
 @Entity
@@ -51,7 +50,7 @@ public class Prazo {
     private Instant criadoEm;
 
     @Column(name = "cumprido_em")
-    private LocalDateTime cumpridoEm;
+    private Instant cumpridoEm;
 
     @Version
     private Long version;
@@ -71,7 +70,7 @@ public class Prazo {
 
     public void marcarComoCumprido() {
         this.status = StatusPrazo.CUMPRIDO;
-        this.cumpridoEm = LocalDateTime.now();
+        this.cumpridoEm = Instant.now();
     }
 
     public void atualizar(String descricao, LocalDate dataPrazo) {
@@ -130,7 +129,7 @@ public class Prazo {
         return criadoEm;
     }
 
-    public LocalDateTime getCumpridoEm() {
+    public Instant getCumpridoEm() {
         return cumpridoEm;
     }
 

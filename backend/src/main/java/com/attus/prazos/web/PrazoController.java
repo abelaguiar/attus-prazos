@@ -27,7 +27,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 @RestController
 @RequestMapping("/prazos")
-@Tag(name = "Prazos", description = "Operacoes para controle de prazos processuais")
+@Tag(name = "Prazos", description = "Operações para controle de prazos processuais")
 public class PrazoController {
 
     private final PrazoService service;
@@ -41,7 +41,7 @@ public class PrazoController {
     @Operation(summary = "Cria um prazo processual")
     @ApiResponse(responseCode = "201", description = "Prazo criado",
             content = @Content(schema = @Schema(implementation = PrazoResponse.class)))
-    @ApiResponse(responseCode = "400", description = "Entrada invalida",
+    @ApiResponse(responseCode = "400", description = "Entrada inválida",
             content = @Content(schema = @Schema(implementation = ApiError.class)))
     @ApiResponse(responseCode = "409", description = "Prazo duplicado",
             content = @Content(schema = @Schema(implementation = ApiError.class)))
@@ -67,7 +67,7 @@ public class PrazoController {
     @Operation(summary = "Busca um prazo processual por id")
     @ApiResponse(responseCode = "200", description = "Prazo encontrado",
             content = @Content(schema = @Schema(implementation = PrazoResponse.class)))
-    @ApiResponse(responseCode = "404", description = "Prazo nao encontrado",
+    @ApiResponse(responseCode = "404", description = "Prazo não encontrado",
             content = @Content(schema = @Schema(implementation = ApiError.class)))
     public PrazoResponse buscarPorId(@Parameter(description = "Identificador do prazo", example = "1")
             @PathVariable Long id) {
@@ -78,11 +78,11 @@ public class PrazoController {
     @Operation(summary = "Atualiza um prazo processual")
     @ApiResponse(responseCode = "200", description = "Prazo atualizado",
             content = @Content(schema = @Schema(implementation = PrazoResponse.class)))
-    @ApiResponse(responseCode = "400", description = "Entrada invalida",
+    @ApiResponse(responseCode = "400", description = "Entrada inválida",
             content = @Content(schema = @Schema(implementation = ApiError.class)))
-    @ApiResponse(responseCode = "404", description = "Prazo nao encontrado",
+    @ApiResponse(responseCode = "404", description = "Prazo não encontrado",
             content = @Content(schema = @Schema(implementation = ApiError.class)))
-    @ApiResponse(responseCode = "409", description = "Conflito de versao",
+    @ApiResponse(responseCode = "409", description = "Conflito de versão",
             content = @Content(schema = @Schema(implementation = ApiError.class)))
     public PrazoResponse atualizar(@Parameter(description = "Identificador do prazo", example = "1")
             @PathVariable Long id,
@@ -99,7 +99,7 @@ public class PrazoController {
     @Operation(summary = "Marca um prazo processual como cumprido")
     @ApiResponse(responseCode = "200", description = "Prazo cumprido",
             content = @Content(schema = @Schema(implementation = PrazoResponse.class)))
-    @ApiResponse(responseCode = "404", description = "Prazo nao encontrado",
+    @ApiResponse(responseCode = "404", description = "Prazo não encontrado",
             content = @Content(schema = @Schema(implementation = ApiError.class)))
     public PrazoResponse cumprir(@Parameter(description = "Identificador do prazo", example = "1")
             @PathVariable Long id) {
