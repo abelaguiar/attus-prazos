@@ -12,6 +12,7 @@ uma análise de incidente em [`docs/INCIDENT_ANALYSIS_LOST_UPDATE.md`](docs/INCI
 | Camada | Tecnologia |
 |---|---|
 | Back-end | Java 21, Spring Boot 4 (Web MVC, Data JPA, Bean Validation), springdoc-openapi (Swagger) |
+| Autenticação | Spring Security 7 + JWT (OAuth2 Resource Server, HS256), senha com BCrypt |
 | Banco | PostgreSQL via Docker; H2 em memória para rodar local e nos testes |
 | Logs | SLF4J + Logback em JSON (ECS), com um `requestId` por requisição |
 | Testes | JUnit 5, Mockito, Spring MockMvc |
@@ -61,6 +62,11 @@ DB_PORT=5433 POSTGRES_PASSWORD=secret docker compose up
 Variáveis disponíveis: `POSTGRES_DB`, `POSTGRES_USER`, `POSTGRES_PASSWORD` (padrão `prazos`) e
 `DB_PORT` (porta publicada no host, padrão `5432`).
 
+Para a autenticação, defina o segredo do JWT (em produção, sempre sobrescreva o padrão):
+
+- `JWT_SECRET`: chave HMAC do JWT, com no mínimo 32 bytes (HS256).
+- `JWT_EXPIRATION_SECONDS`: validade do token em segundos (padrão `3600`).
+
 No profile `docker`, o arquivo `backend/src/main/resources/schema-docker.sql` roda de forma
 idempotente no PostgreSQL. Ele ajusta bancos já existentes para descrições longas: converte
 `descricao` para `text`, cria/preenche `descricao_hash`, normaliza números de processo para
@@ -103,11 +109,36 @@ Documentacao interativa:
 
 | Método | Rota | Descrição | Sucesso | Erros |
 |---|---|---|---|---|
+| `POST` | `/auth/registrar` | Cadastra um usuário | `201` | `400` validação, `409` e-mail duplicado |
+| `POST` | `/auth/login` | Autentica e devolve um token JWT | `200` | `400`, `401` credenciais inválidas |
 | `POST` | `/prazos` | Cria um prazo | `201` | `400` validação, `409` duplicado |
 | `GET` | `/prazos` | Lista os prazos | `200` | — |
 | `GET` | `/prazos/{id}` | Busca um prazo | `200` | `404` |
 | `PUT` | `/prazos/{id}` | Edita um prazo (exige `version`) | `200` | `400`, `404`, `409` conflito de versão |
 | `PATCH` | `/prazos/{id}/cumprir` | Marca como cumprido | `200` | `404` |
+
+As rotas `/auth/**` e o Swagger são públicas; todas as rotas `/prazos/**` exigem autenticação.
+Sem token (ou com token inválido), a API responde `401` no mesmo formato `ApiError`.
+
+### Autenticação
+
+O cadastro guarda a senha como hash BCrypt e o login devolve um JWT (HS256). Envie esse token no
+header `Authorization` das chamadas a `/prazos`.
+
+```bash
+# 1. Cadastrar
+curl -X POST http://localhost:8080/auth/registrar \
+  -H "Content-Type: application/json" \
+  -d '{"nome":"Maria Souza","email":"maria@exemplo.com","senha":"senhaForte123"}'
+
+# 2. Login -> retorna { "accessToken": "...", "tokenType": "Bearer", "expiresIn": 3600 }
+TOKEN=$(curl -s -X POST http://localhost:8080/auth/login \
+  -H "Content-Type: application/json" \
+  -d '{"email":"maria@exemplo.com","senha":"senhaForte123"}' | jq -r .accessToken)
+
+# 3. Chamar uma rota protegida
+curl http://localhost:8080/prazos -H "Authorization: Bearer $TOKEN"
+```
 
 Toda resposta traz o header `X-Request-Id`, que casa com os logs. O campo `version` é devolvido
 em todas as respostas e precisa ser enviado de volta no `PUT` (é o controle de concorrência).
@@ -122,6 +153,7 @@ Criar um prazo:
 ```bash
 curl -X POST http://localhost:8080/prazos \
   -H "Content-Type: application/json" \
+  -H "Authorization: Bearer $TOKEN" \
   -d '{"numeroProcesso":"0001234-56.2026.8.26.0100","descricao":"Contestação","dataPrazo":"2026-12-31"}'
 ```
 
@@ -193,14 +225,15 @@ No console o formato fica legível, para ajudar no dia a dia de desenvolvimento.
 attus-prazos/
 ├── backend/            # API Spring Boot
 │   └── src/main/java/com/attus/prazos/
-│       ├── domain/         # Prazo, StatusPrazo
-│       ├── repository/     # PrazoRepository (Spring Data JPA)
-│       ├── service/        # PrazoService
-│       └── web/            # Controller, DTOs, ExceptionHandler, RequestIdFilter
+│       ├── config/         # SecurityConfig (JWT), SecurityErrorHandler, OpenApiConfig
+│       ├── domain/         # Prazo, StatusPrazo, Usuario, Role
+│       ├── repository/     # PrazoRepository, UsuarioRepository (Spring Data JPA)
+│       ├── service/        # PrazoService, AuthService, TokenService, AppUserDetailsService
+│       └── web/            # Controllers (Prazo, Auth), DTOs, ExceptionHandler, RequestIdFilter
 ├── frontend/           # React + TypeScript (Vite)
 │   └── src/
-│       ├── components/     # PrazoForm, PrazoEditForm, PrazoList
-│       ├── api.ts          # cliente HTTP
+│       ├── components/     # AuthForm, PrazoForm, PrazoEditForm, PrazoList
+│       ├── api.ts          # cliente HTTP (token JWT + Authorization)
 │       └── types.ts        # tipos que espelham o contrato da API
 ├── docs/
 │   ├── INCIDENT_ANALYSIS_LOST_UPDATE.md   # análise de incidente (Parte 2)
