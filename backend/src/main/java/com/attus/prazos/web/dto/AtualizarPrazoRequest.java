@@ -13,7 +13,7 @@ public record AtualizarPrazoRequest(
         @Schema(description = "Nova descricao objetiva do ato ou compromisso",
                 example = "Apelacao", maxLength = 255)
         @NotBlank(message = "descricao e' obrigatoria")
-        @Size(max = 255, message = "descricao deve ter no maximo 255 caracteres")
+        @Size(max = 2000, message = "descricao deve ter no maximo 2000 caracteres")
         String descricao,
 
         @Schema(description = "Nova data limite do prazo", example = "2027-01-15")

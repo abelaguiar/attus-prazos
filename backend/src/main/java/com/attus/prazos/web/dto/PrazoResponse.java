@@ -1,6 +1,7 @@
 package com.attus.prazos.web.dto;
 
 import com.attus.prazos.domain.Prazo;
+import com.attus.prazos.domain.NumeroProcesso;
 import com.attus.prazos.domain.StatusPrazo;
 import io.swagger.v3.oas.annotations.media.Schema;
 import java.time.Instant;
@@ -32,7 +33,7 @@ public record PrazoResponse(
     public static PrazoResponse from(Prazo prazo) {
         return new PrazoResponse(
                 prazo.getId(),
-                prazo.getNumeroProcesso(),
+                NumeroProcesso.formatar(prazo.getNumeroProcesso()),
                 prazo.getDescricao(),
                 prazo.getDataPrazo(),
                 prazo.getStatus(),

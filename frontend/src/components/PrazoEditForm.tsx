@@ -52,10 +52,10 @@ export function PrazoEditForm({ prazo, onSalvo, onConflito, onCancelar }: Props)
 
       <label>
         Descrição
-        <input
-          type="text"
+        <textarea
           value={descricao}
           onChange={(e) => setDescricao(e.target.value)}
+          rows={3}
         />
         {erros.descricao && <span className="erro-campo">{erros.descricao}</span>}
       </label>
