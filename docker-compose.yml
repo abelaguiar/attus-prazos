@@ -22,6 +22,9 @@ services:
       POSTGRES_DB: ${POSTGRES_DB:-prazos}
       POSTGRES_USER: ${POSTGRES_USER:-prazos}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-prazos}
+      # Segredo do JWT (HS256, minimo 32 bytes). Defina JWT_SECRET no ambiente em producao.
+      JWT_SECRET: ${JWT_SECRET:-troque-este-segredo-de-desenvolvimento-com-32+caracteres}
+      JWT_EXPIRATION_SECONDS: ${JWT_EXPIRATION_SECONDS:-3600}
     ports:
       - "8080:8080"
     depends_on:
