@@ -10,6 +10,16 @@ interface Props {
   onCancelar: () => void;
 }
 
+/**
+ * O back-end devolve 409 em dois cenários: conflito de concorrência (o prazo foi
+ * modificado por outra operação) e prazo duplicado. Só o primeiro deve recarregar a
+ * lista; o segundo é um erro de validação que fica no formulário. Distinguimos pela
+ * mensagem, já que o status HTTP é o mesmo nos dois casos.
+ */
+function ehConflitoDeConcorrencia(err: ApiException): boolean {
+  return err.apiError.status === 409 && err.apiError.message.toLowerCase().includes('modificad');
+}
+
 export function PrazoEditForm({ prazo, onSalvo, onConflito, onCancelar }: Props) {
   const [descricao, setDescricao] = useState(prazo.descricao);
   const [dataPrazo, setDataPrazo] = useState(prazo.dataPrazo);
@@ -42,8 +52,9 @@ export function PrazoEditForm({ prazo, onSalvo, onConflito, onCancelar }: Props)
       });
       onSalvo(atualizado);
     } catch (err) {
-      // 409 = o prazo mudou no servidor desde que abrimos a edição; deixa o pai recarregar.
-      if (err instanceof ApiException && err.apiError.status === 409) {
+      // Conflito de concorrência (o prazo mudou no servidor): deixa o pai recarregar.
+      // Duplicidade e demais erros viram mensagem no próprio formulário.
+      if (err instanceof ApiException && ehConflitoDeConcorrencia(err)) {
         onConflito();
         return;
       }
