@@ -123,6 +123,17 @@ class PrazoControllerTest {
     }
 
     @Test
+    void deveRejeitarNumeroProcessoIncompleto() throws Exception {
+        String corpo = """
+                {"numeroProcesso":"0001234-56.2026","descricao":"Contestacao","dataPrazo":"%s"}
+                """.formatted(LocalDate.now().plusDays(30));
+
+        mockMvc.perform(post("/prazos").contentType(MediaType.APPLICATION_JSON).content(corpo))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.fieldErrors[*].field").value(hasItem("numeroProcesso")));
+    }
+
+    @Test
     void deveRetornar404ParaPrazoInexistente() throws Exception {
         mockMvc.perform(get("/prazos/999"))
                 .andExpect(status().isNotFound())

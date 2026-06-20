@@ -17,7 +17,10 @@ export function PrazoForm({ onCriado }: Props) {
 
   function validarLocal(): Record<string, string> {
     const novos: Record<string, string> = {};
-    if (!numeroProcesso.trim()) novos.numeroProcesso = 'Informe o número do processo';
+    const digitos = numeroProcesso.replace(/\D/g, '');
+    if (!digitos) novos.numeroProcesso = 'Informe o número do processo';
+    else if (digitos.length !== 20)
+      novos.numeroProcesso = 'Número do processo incompleto (20 dígitos)';
     if (!descricao.trim()) novos.descricao = 'Informe a descrição';
     if (!dataPrazo) novos.dataPrazo = 'Informe a data do prazo';
     return novos;
