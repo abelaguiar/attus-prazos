@@ -37,6 +37,17 @@ body {
   padding: 1.75rem 1rem;
 }
 
+.app-header__inner--row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+}
+
+.app-header__inner--row .btn-ghost {
+  flex-shrink: 0;
+}
+
 .app-header h1 {
   margin: 0 0 0.35rem;
   color: #fff;
@@ -186,6 +197,45 @@ section h2 {
   border: 1px solid #fecaca;
   padding: 0.6rem 0.8rem;
   border-radius: 8px;
+}
+
+/* Tela de autenticação */
+.auth-card {
+  max-width: 420px;
+  margin: 0 auto;
+}
+
+.auth-tabs {
+  display: flex;
+  gap: 0.5rem;
+  margin-bottom: 1rem;
+}
+
+.auth-tab {
+  flex: 1;
+  padding: 0.6rem 0.8rem;
+  background: #fff;
+  border: 1px solid var(--borda);
+  border-radius: 8px;
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: var(--muted);
+  cursor: pointer;
+  transition: background 0.15s ease, color 0.15s ease, border-color 0.15s ease;
+}
+
+.auth-tab:hover {
+  background: var(--fundo);
+}
+
+.auth-tab.is-active {
+  background: var(--azul-claro);
+  border-color: var(--azul);
+  color: var(--azul);
+}
+
+.auth-card .btn-primary {
+  align-self: stretch;
 }
 
 /* Tabela em card branco */

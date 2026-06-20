@@ -1,6 +1,7 @@
 package com.attus.prazos.web;
 
 import com.attus.prazos.exception.ConflitoDeVersaoException;
+import com.attus.prazos.exception.EmailJaCadastradoException;
 import com.attus.prazos.exception.PrazoDuplicadoException;
 import com.attus.prazos.exception.PrazoNaoEncontradoException;
 import jakarta.servlet.http.HttpServletRequest;
@@ -13,6 +14,7 @@ import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.HttpStatus;
 import org.springframework.orm.ObjectOptimisticLockingFailureException;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.AuthenticationException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.ResponseStatus;
@@ -78,6 +80,32 @@ public class GlobalExceptionHandler {
                 request.getRequestURI(),
                 List.of());
         return ResponseEntity.status(HttpStatus.CONFLICT).body(corpo);
+    }
+
+    @ExceptionHandler(EmailJaCadastradoException.class)
+    @ResponseStatus(HttpStatus.CONFLICT)
+    public ApiError handleEmailDuplicado(EmailJaCadastradoException ex, HttpServletRequest request) {
+        log.warn("Cadastro com e-mail duplicado em {}", request.getRequestURI());
+        return new ApiError(
+                Instant.now(),
+                HttpStatus.CONFLICT.value(),
+                "Conflict",
+                ex.getMessage(),
+                request.getRequestURI(),
+                List.of());
+    }
+
+    @ExceptionHandler(AuthenticationException.class)
+    @ResponseStatus(HttpStatus.UNAUTHORIZED)
+    public ApiError handleCredenciaisInvalidas(AuthenticationException ex, HttpServletRequest request) {
+        log.warn("Falha de autenticação em {}", request.getRequestURI());
+        return new ApiError(
+                Instant.now(),
+                HttpStatus.UNAUTHORIZED.value(),
+                "Unauthorized",
+                "E-mail ou senha inválidos.",
+                request.getRequestURI(),
+                List.of());
     }
 
     @ExceptionHandler(DataIntegrityViolationException.class)

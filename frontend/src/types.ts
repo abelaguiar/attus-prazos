@@ -24,6 +24,29 @@ export interface AtualizarPrazoRequest {
   version: number;
 }
 
+export interface LoginRequest {
+  email: string;
+  senha: string;
+}
+
+export interface RegistrarRequest {
+  nome: string;
+  email: string;
+  senha: string;
+}
+
+export interface TokenResponse {
+  accessToken: string;
+  tokenType: string;
+  expiresIn: number;
+}
+
+export interface Usuario {
+  id: number;
+  nome: string;
+  email: string;
+}
+
 export interface ApiFieldError {
   field: string;
   message: string;
