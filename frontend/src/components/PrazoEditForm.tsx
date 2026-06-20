@@ -1,5 +1,5 @@
 import { useState, type FormEvent } from 'react';
-import { ApiException, atualizarPrazo } from '../api';
+import { ApiException, atualizarPrazo, mapearErrosDeCampo } from '../api';
 import type { Prazo } from '../types';
 import { IconSave, IconX } from './icons';
 
@@ -16,8 +16,22 @@ export function PrazoEditForm({ prazo, onSalvo, onConflito, onCancelar }: Props)
   const [erros, setErros] = useState<Record<string, string>>({});
   const [enviando, setEnviando] = useState(false);
 
+  function validarLocal(): Record<string, string> {
+    const novos: Record<string, string> = {};
+    if (!descricao.trim()) novos.descricao = 'Informe a descrição';
+    if (!dataPrazo) novos.dataPrazo = 'Informe a data do prazo';
+    return novos;
+  }
+
   async function handleSubmit(event: FormEvent) {
     event.preventDefault();
+
+    const errosLocais = validarLocal();
+    if (Object.keys(errosLocais).length > 0) {
+      setErros(errosLocais);
+      return;
+    }
+
     setEnviando(true);
     setErros({});
     try {
@@ -28,19 +42,12 @@ export function PrazoEditForm({ prazo, onSalvo, onConflito, onCancelar }: Props)
       });
       onSalvo(atualizado);
     } catch (err) {
-      if (err instanceof ApiException) {
-        if (err.apiError.status === 409) {
-          onConflito();
-          return;
-        }
-        const mapa: Record<string, string> = {};
-        for (const fe of err.apiError.fieldErrors) {
-          mapa[fe.field] = fe.message;
-        }
-        setErros(mapa);
-      } else {
-        setErros({ geral: 'Não foi possível salvar. O back-end está rodando?' });
+      // 409 = o prazo mudou no servidor desde que abrimos a edição; deixa o pai recarregar.
+      if (err instanceof ApiException && err.apiError.status === 409) {
+        onConflito();
+        return;
       }
+      setErros(mapearErrosDeCampo(err));
     } finally {
       setEnviando(false);
     }

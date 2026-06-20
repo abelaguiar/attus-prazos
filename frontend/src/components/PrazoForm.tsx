@@ -1,5 +1,5 @@
 import { useState, type FormEvent } from 'react';
-import { ApiException, criarPrazo } from '../api';
+import { criarPrazo, mapearErrosDeCampo } from '../api';
 import { mascaraProcesso } from '../mascaras';
 import type { Prazo } from '../types';
 import { IconPlus } from './icons';
@@ -44,15 +44,7 @@ export function PrazoForm({ onCriado }: Props) {
       setDescricao('');
       setDataPrazo('');
     } catch (err) {
-      if (err instanceof ApiException) {
-        const mapa: Record<string, string> = {};
-        for (const fe of err.apiError.fieldErrors) {
-          mapa[fe.field] = fe.message;
-        }
-        setErros(mapa);
-      } else {
-        setErros({ geral: 'Não foi possível salvar. O back-end está rodando?' });
-      }
+      setErros(mapearErrosDeCampo(err));
     } finally {
       setEnviando(false);
     }
