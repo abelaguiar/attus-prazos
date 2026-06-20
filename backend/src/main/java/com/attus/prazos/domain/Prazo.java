@@ -33,9 +33,13 @@ public class Prazo {
         this.version = version;
     }
 
-    /** Criacao de um novo prazo: nasce PENDENTE, com data de criacao, ainda sem id/version. */
+    /**
+     * Criacao de um novo prazo: nasce PENDENTE, com data de criacao, ainda sem id/version.
+     * O numero do processo e' normalizado para a forma canonica (so digitos) — regra de dominio,
+     * para que mascarado e nao-mascarado sejam o mesmo prazo.
+     */
     public static Prazo novo(String numeroProcesso, String descricao, LocalDate dataPrazo) {
-        return new Prazo(null, numeroProcesso, descricao, dataPrazo,
+        return new Prazo(null, NumeroProcesso.normalizar(numeroProcesso), descricao, dataPrazo,
                 StatusPrazo.PENDENTE, Instant.now(), null, null);
     }
 

@@ -34,7 +34,7 @@ class PrazoServiceTest {
                 LocalDate.now().plusDays(10));
 
         assertThat(resultado.getStatus()).isEqualTo(StatusPrazo.PENDENTE);
-        assertThat(resultado.getNumeroProcesso()).isEqualTo("0001234-56.2026.8.26.0100");
+        assertThat(resultado.getNumeroProcesso()).isEqualTo("00012345620268260100");
         assertThat(resultado.getCumpridoEm()).isNull();
     }
 

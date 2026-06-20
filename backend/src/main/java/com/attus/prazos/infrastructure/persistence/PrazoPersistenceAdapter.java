@@ -20,7 +20,7 @@ import org.springframework.stereotype.Component;
 @Component
 public class PrazoPersistenceAdapter implements PrazoRepositoryPort {
 
-    private static final String UK_PRAZO_DUPLICADO = "uk_prazo_processo_descricao_data";
+    private static final String UK_PRAZO_DUPLICADO = "uk_prazo_processo_descricao_hash_data";
 
     private final PrazoJpaRepository repository;
     private final PrazoMapper mapper;

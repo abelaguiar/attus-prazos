@@ -29,7 +29,7 @@ public class PrazoService implements PrazoUseCase {
         Prazo prazo = Prazo.novo(numeroProcesso, descricao, dataPrazo);
         Prazo salvo = repository.salvar(prazo);
         log.info("Prazo criado id={} numeroProcesso={} dataPrazo={}",
-                salvo.getId(), numeroProcesso, dataPrazo);
+                salvo.getId(), salvo.getNumeroProcesso(), dataPrazo);
         return salvo;
     }
 

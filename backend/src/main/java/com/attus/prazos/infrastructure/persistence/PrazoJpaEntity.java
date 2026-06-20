@@ -24,8 +24,8 @@ import java.time.LocalDateTime;
 @Table(
         name = "prazo",
         uniqueConstraints = @UniqueConstraint(
-                name = "uk_prazo_processo_descricao_data",
-                columnNames = {"numero_processo", "descricao", "data_prazo"}))
+                name = "uk_prazo_processo_descricao_hash_data",
+                columnNames = {"numero_processo", "descricao_hash", "data_prazo"}))
 public class PrazoJpaEntity {
 
     @Id
@@ -35,8 +35,16 @@ public class PrazoJpaEntity {
     @Column(name = "numero_processo", nullable = false)
     private String numeroProcesso;
 
-    @Column(nullable = false)
+    @Column(nullable = false, columnDefinition = "text")
     private String descricao;
+
+    /**
+     * Hash SHA-256 da descricao. Sustenta o indice unico sem indexar o {@code text} completo
+     * (que pode estourar o limite de entrada do B-tree no PostgreSQL). Derivado da descricao
+     * no PrazoMapper.
+     */
+    @Column(name = "descricao_hash", nullable = false, length = 64)
+    private String descricaoHash;
 
     @Column(name = "data_prazo", nullable = false)
     private LocalDate dataPrazo;
@@ -79,6 +87,14 @@ public class PrazoJpaEntity {
 
     public void setDescricao(String descricao) {
         this.descricao = descricao;
+    }
+
+    public String getDescricaoHash() {
+        return descricaoHash;
+    }
+
+    public void setDescricaoHash(String descricaoHash) {
+        this.descricaoHash = descricaoHash;
     }
 
     public LocalDate getDataPrazo() {

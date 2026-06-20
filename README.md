@@ -1,128 +1,124 @@
 # Monitor de Prazos Processuais
 
-Aplicação full-stack para **cadastro e monitoramento de prazos processuais** — inspirada no
-domínio de procuradoria digital (acompanhar prazos de processos, marcar como cumpridos e
-visualizar os que estão vencidos).
+Aplicação full-stack para cadastrar e acompanhar prazos de processos: dá pra registrar um
+prazo, editar, marcar como cumprido e ver quais já venceram. O domínio é inspirado em
+procuradoria digital.
 
-Projeto desenvolvido como teste técnico, contemplando **desenvolvimento ponta a ponta**
-(front-end, API, persistência e logs) e uma **análise de incidente** (ver
-[`docs/INCIDENT_ANALYSIS_LOST_UPDATE.md`](docs/INCIDENT_ANALYSIS_LOST_UPDATE.md)).
-
-Funcionalidades: cadastrar, listar, **editar** (com controle de concorrência), marcar como
-cumprido e identificar prazos vencidos.
-
----
+Foi feito como teste técnico, então cobre o fluxo inteiro (front, API, banco e logs) e inclui
+uma análise de incidente em [`docs/INCIDENT_ANALYSIS_LOST_UPDATE.md`](docs/INCIDENT_ANALYSIS_LOST_UPDATE.md).
 
 ## Stack
 
 | Camada | Tecnologia |
 |---|---|
-| Back-end | Java 21, Spring Boot 4 (Web MVC, Data JPA, Bean Validation) |
-| Banco | PostgreSQL (via Docker) · H2 em memória (local/testes) |
-| Logs | SLF4J + logback, **JSON estruturado (ECS)** com `requestId` por requisição |
+| Back-end | Java 21, Spring Boot 4 (Web MVC, Data JPA, Bean Validation), springdoc-openapi (Swagger) |
+| Banco | PostgreSQL via Docker; H2 em memória para rodar local e nos testes |
+| Logs | SLF4J + Logback em JSON (ECS), com um `requestId` por requisição |
 | Testes | JUnit 5, Mockito, Spring MockMvc |
 | Front-end | React 19 + TypeScript + Vite |
-| Infra | Docker + Docker Compose |
+| Infra | Docker e Docker Compose |
 
 ## Arquitetura
 
-Back-end em camadas (separação de responsabilidades):
+O back-end é organizado em camadas:
 
 ```
-HTTP → Controller → Service → Repository → Banco (H2 · PostgreSQL)
-        (borda)     (regras)   (acesso)
+HTTP → Controller → Service → Repository → Banco
 ```
 
-- **Controller** (`web/`): recebe HTTP, valida entrada, devolve JSON. Sem regra de negócio.
-- **Service** (`service/`): regra de negócio e transações.
-- **Repository** (`repository/`): acesso a dados via Spring Data JPA.
-- **Domain** (`domain/`): a entidade `Prazo` e suas regras (ex.: "vencido" é derivado).
-- **DTOs** (`web/dto/`): contratos de entrada/saída separados da entidade.
-- **GlobalExceptionHandler**: tratamento de erro centralizado (400/404/409/500 consistentes).
+- `web/`: controllers, DTOs, tratamento de erro e o filtro de requestId. Recebe o HTTP e
+  devolve JSON, sem regra de negócio.
+- `service/`: regra de negócio e controle de transação.
+- `repository/`: acesso a dados com Spring Data JPA.
+- `domain/`: a entidade `Prazo` e o que é dela (por exemplo, "vencido" é calculado, não tem
+  coluna).
 
----
+Os erros passam por um handler global, que devolve 400/404/409/500 num formato consistente.
 
 ## Como executar
 
-### Pré-requisitos
+Pré-requisitos: Java 21, Node 20+ e, se quiser rodar via container, Docker. O Maven não é
+obrigatório porque o projeto traz o wrapper (`./mvnw`).
 
-- **Java 21** e **Maven** (ou use o `./mvnw` incluído)
-- **Node 20+** e **npm**
-- *(opcional)* **Docker** e **Docker Compose**
-
-### Opção A — Docker (um comando)
+### Com Docker
 
 ```bash
 docker compose up --build
 ```
 
-- Front-end: <http://localhost:5173>
+- Front: <http://localhost:5173>
 - API: <http://localhost:8080>
-- Banco: **PostgreSQL** (container `postgres`), ativado pelo profile `docker`.
+- Swagger UI: <http://localhost:8080/swagger-ui.html>
+- Banco: PostgreSQL no container `postgres`, selecionado pelo profile `docker`.
 
-### Banco de dados por ambiente
-
-| Como roda | Banco | Como é selecionado |
-|---|---|---|
-| `docker compose up` | PostgreSQL | profile `docker` (`SPRING_PROFILES_ACTIVE=docker` no compose) |
-| Local (`./mvnw spring-boot:run`) e testes | H2 em memória | profile default (`application.properties`) |
-
-Ou seja: **com Docker usa Postgres; sem Docker, H2** — sem precisar mudar nada no código.
-
-As credenciais e a porta do Postgres têm defaults, mas são sobrescrevíveis por variáveis de
-ambiente (úteis se a `5432` já estiver em uso ou para não versionar senhas):
+As credenciais e a porta do Postgres têm valores padrão, mas dá pra sobrescrever por variável
+de ambiente (útil quando a 5432 já está em uso, ou pra não deixar senha no repositório):
 
 ```bash
 DB_PORT=5433 POSTGRES_PASSWORD=secret docker compose up
 ```
 
-Variáveis: `POSTGRES_DB`, `POSTGRES_USER`, `POSTGRES_PASSWORD` (default `prazos`) e
-`DB_PORT` (porta publicada no host, default `5432`).
+Variáveis disponíveis: `POSTGRES_DB`, `POSTGRES_USER`, `POSTGRES_PASSWORD` (padrão `prazos`) e
+`DB_PORT` (porta publicada no host, padrão `5432`).
 
-### Opção B — Local (desenvolvimento)
+No profile `docker`, o arquivo `backend/src/main/resources/schema-docker.sql` roda de forma
+idempotente no PostgreSQL. Ele ajusta bancos já existentes para descrições longas: converte
+`descricao` para `text`, cria/preenche `descricao_hash`, normaliza números de processo para
+dígitos e troca a constraint antiga por uma constraint única baseada em
+`numero_processo`, `descricao_hash` e `data_prazo`.
 
-**Back-end** (porta 8080):
+### Local (sem Docker)
+
+Back-end, na porta 8080:
+
 ```bash
 cd backend
 ./mvnw spring-boot:run
 ```
 
-**Front-end** (porta 5173), em outro terminal:
+Front, na porta 5173, em outro terminal:
+
 ```bash
 cd frontend
 npm install
 npm run dev
 ```
 
-Acesse <http://localhost:5173>.
-
-### Rodar os testes (back-end)
+Sem Docker a aplicação usa H2 em memória, então não precisa instalar banco. Os testes também
+rodam no H2:
 
 ```bash
 cd backend
 ./mvnw test
 ```
 
----
-
 ## API
 
-Base URL: `http://localhost:8080`
+Base: `http://localhost:8080`
+
+Documentacao interativa:
+
+- Swagger UI: <http://localhost:8080/swagger-ui.html>
+- OpenAPI JSON: <http://localhost:8080/v3/api-docs>
 
 | Método | Rota | Descrição | Sucesso | Erros |
 |---|---|---|---|---|
-| `POST` | `/prazos` | Cria um prazo | `201 Created` | `400` validação, `409` duplicado |
-| `GET` | `/prazos` | Lista todos os prazos | `200 OK` | — |
-| `GET` | `/prazos/{id}` | Busca um prazo | `200 OK` | `404` não encontrado |
-| `PUT` | `/prazos/{id}` | Edita um prazo (exige `version`) | `200 OK` | `400` validação, `404` não encontrado, `409` conflito de versão |
-| `PATCH` | `/prazos/{id}/cumprir` | Marca como cumprido | `200 OK` | `404` não encontrado |
+| `POST` | `/prazos` | Cria um prazo | `201` | `400` validação, `409` duplicado |
+| `GET` | `/prazos` | Lista os prazos | `200` | — |
+| `GET` | `/prazos/{id}` | Busca um prazo | `200` | `404` |
+| `PUT` | `/prazos/{id}` | Edita um prazo (exige `version`) | `200` | `400`, `404`, `409` conflito de versão |
+| `PATCH` | `/prazos/{id}/cumprir` | Marca como cumprido | `200` | `404` |
 
-Toda resposta inclui o header **`X-Request-Id`** (rastreável nos logs). O campo `version`
-(controle de concorrência otimista) é retornado em toda resposta e exigido no `PUT`.
+Toda resposta traz o header `X-Request-Id`, que casa com os logs. O campo `version` é devolvido
+em todas as respostas e precisa ser enviado de volta no `PUT` (é o controle de concorrência).
 
-### Exemplos
+O `numeroProcesso` segue o padrão CNJ (20 dígitos). A API aceita tanto o valor mascarado
+(`0001234-56.2026.8.26.0100`) quanto os 20 dígitos crus, armazena só os dígitos e devolve
+formatado. Número incompleto é rejeitado com `400`. A `descricao` é texto livre de até 2000
+caracteres.
 
 Criar um prazo:
+
 ```bash
 curl -X POST http://localhost:8080/prazos \
   -H "Content-Type: application/json" \
@@ -130,6 +126,7 @@ curl -X POST http://localhost:8080/prazos \
 ```
 
 Resposta (`201`):
+
 ```json
 {
   "id": 1,
@@ -144,7 +141,8 @@ Resposta (`201`):
 }
 ```
 
-Entrada inválida (`400`) — retorna o detalhe de cada campo:
+Quando a entrada é inválida, o 400 vem com o detalhe de cada campo:
+
 ```json
 {
   "status": 400,
@@ -156,39 +154,38 @@ Entrada inválida (`400`) — retorna o detalhe de cada campo:
 }
 ```
 
-Prazo duplicado (`409`) — mesmo processo + descrição + data:
+Tentar criar um prazo igual a outro (mesmo processo, descrição e data) dá 409:
+
 ```json
 { "status": 409, "error": "Conflict", "message": "Já existe um prazo com este processo, descrição e data." }
 ```
 
-Editar um prazo — envie o `version` que você recebeu na leitura:
+Para editar, mande o `version` que veio na leitura:
+
 ```bash
 curl -X PUT http://localhost:8080/prazos/1 \
   -H "Content-Type: application/json" \
   -d '{"descricao":"Apelação","dataPrazo":"2027-01-15","version":0}'
 ```
 
-Conflito de versão (`409`) — alguém editou o prazo antes de você (a `version` enviada está
-desatualizada). A edição é **rejeitada** em vez de sobrescrever (previne *lost update*):
+Se outra pessoa editou o prazo nesse meio tempo, o `version` enviado fica defasado e a edição
+é recusada com 409, em vez de gravar por cima:
+
 ```json
 { "status": 409, "error": "Conflict", "message": "O prazo 1 foi modificado por outra operação. Recarregue e tente novamente." }
 ```
 
----
+## Logs
 
-## Observabilidade (logs)
-
-Os logs são escritos em **JSON estruturado (padrão ECS)** em `backend/logs/prazos.json`,
-com um **`requestId`** por requisição (propagado via MDC e devolvido no header `X-Request-Id`).
-Isso permite rastrear toda a jornada de uma requisição. Exemplo:
+Os logs vão para `backend/logs/prazos.json` em JSON (padrão ECS), cada linha com o `requestId`
+da requisição (propagado por MDC e devolvido no header `X-Request-Id`). Com isso dá pra seguir
+uma requisição do começo ao fim. Exemplo de uma linha:
 
 ```json
 { "@timestamp": "...", "log": {"level":"INFO"}, "message": "Prazo criado id=1 ...", "requestId": "0fff2b34-..." }
 ```
 
-No console, os logs ficam em formato legível para facilitar o desenvolvimento.
-
----
+No console o formato fica legível, para ajudar no dia a dia de desenvolvimento.
 
 ## Estrutura do projeto
 
@@ -196,24 +193,22 @@ No console, os logs ficam em formato legível para facilitar o desenvolvimento.
 attus-prazos/
 ├── backend/            # API Spring Boot
 │   └── src/main/java/com/attus/prazos/
-│       ├── domain/         # Entidade Prazo, StatusPrazo
+│       ├── domain/         # Prazo, StatusPrazo
 │       ├── repository/     # PrazoRepository (Spring Data JPA)
-│       ├── service/        # PrazoService (regra de negócio)
+│       ├── service/        # PrazoService
 │       └── web/            # Controller, DTOs, ExceptionHandler, RequestIdFilter
-├── frontend/           # App React + TypeScript (Vite)
+├── frontend/           # React + TypeScript (Vite)
 │   └── src/
 │       ├── components/     # PrazoForm, PrazoEditForm, PrazoList
-│       ├── api.ts          # Cliente HTTP
-│       └── types.ts        # Tipos espelhando o contrato da API
+│       ├── api.ts          # cliente HTTP
+│       └── types.ts        # tipos que espelham o contrato da API
 ├── docs/
-│   ├── INCIDENT_ANALYSIS_LOST_UPDATE.md   # Parte 2 — análise de incidente (lost update)
-│   └── TECH_NOTES.md                      # Decisões técnicas, trade-offs e melhorias
+│   ├── INCIDENT_ANALYSIS_LOST_UPDATE.md   # análise de incidente (Parte 2)
+│   └── TECH_NOTES.md                      # decisões técnicas e melhorias
 └── docker-compose.yml
 ```
 
----
+## Mais documentação
 
-## Documentação adicional
-
-- 📄 [Análise de incidente — lost update (Parte 2)](docs/INCIDENT_ANALYSIS_LOST_UPDATE.md)
-- 📄 [Nota técnica — decisões e trade-offs](docs/TECH_NOTES.md)
+- [Análise de incidente — lost update](docs/INCIDENT_ANALYSIS_LOST_UPDATE.md)
+- [Nota técnica — decisões e trade-offs](docs/TECH_NOTES.md)
