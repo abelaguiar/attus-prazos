@@ -60,6 +60,12 @@ DB_PORT=5433 POSTGRES_PASSWORD=secret docker compose up
 Variáveis disponíveis: `POSTGRES_DB`, `POSTGRES_USER`, `POSTGRES_PASSWORD` (padrão `prazos`) e
 `DB_PORT` (porta publicada no host, padrão `5432`).
 
+No profile `docker`, o arquivo `backend/src/main/resources/schema-docker.sql` roda de forma
+idempotente no PostgreSQL. Ele ajusta bancos já existentes para descrições longas: converte
+`descricao` para `text`, cria/preenche `descricao_hash`, normaliza números de processo para
+dígitos e troca a constraint antiga por uma constraint única baseada em
+`numero_processo`, `descricao_hash` e `data_prazo`.
+
 ### Local (sem Docker)
 
 Back-end, na porta 8080:

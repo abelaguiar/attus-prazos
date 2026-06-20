@@ -1,6 +1,7 @@
 package com.attus.prazos.web;
 
 import static org.hamcrest.Matchers.hasSize;
+import static org.hamcrest.Matchers.hasItem;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.patch;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
@@ -49,6 +50,7 @@ class PrazoControllerTest {
         mockMvc.perform(post("/prazos").contentType(MediaType.APPLICATION_JSON).content(corpo))
                 .andExpect(status().isCreated())
                 .andExpect(jsonPath("$.id").exists())
+                .andExpect(jsonPath("$.numeroProcesso").value("0001234-56.2026.8.26.0100"))
                 .andExpect(jsonPath("$.status").value("PENDENTE"))
                 .andExpect(jsonPath("$.vencido").value(false))
                 .andExpect(header().exists("X-Request-Id"));
@@ -66,6 +68,47 @@ class PrazoControllerTest {
         mockMvc.perform(post("/prazos").contentType(MediaType.APPLICATION_JSON).content(corpo))
                 .andExpect(status().isConflict())
                 .andExpect(jsonPath("$.status").value(409));
+    }
+
+    @Test
+    void deveRejeitarDuplicadoComNumeroProcessoMascaradoENaoMascarado() throws Exception {
+        String dataPrazo = LocalDate.now().plusDays(30).toString();
+        String corpoSemMascara = """
+                {"numeroProcesso":"00012345620268260100","descricao":"Contestacao","dataPrazo":"%s"}
+                """.formatted(dataPrazo);
+        String corpoComMascara = """
+                {"numeroProcesso":"0001234-56.2026.8.26.0100","descricao":"Contestacao","dataPrazo":"%s"}
+                """.formatted(dataPrazo);
+
+        mockMvc.perform(post("/prazos").contentType(MediaType.APPLICATION_JSON).content(corpoSemMascara))
+                .andExpect(status().isCreated())
+                .andExpect(jsonPath("$.numeroProcesso").value("0001234-56.2026.8.26.0100"));
+
+        mockMvc.perform(post("/prazos").contentType(MediaType.APPLICATION_JSON).content(corpoComMascara))
+                .andExpect(status().isConflict())
+                .andExpect(jsonPath("$.status").value(409));
+    }
+
+    @Test
+    void deveAceitarDescricaoCom2000CaracteresAoCriar() throws Exception {
+        String corpo = """
+                {"numeroProcesso":"0001234-56.2026.8.26.0100","descricao":"%s","dataPrazo":"%s"}
+                """.formatted(descricaoComTamanho(2000), LocalDate.now().plusDays(30));
+
+        mockMvc.perform(post("/prazos").contentType(MediaType.APPLICATION_JSON).content(corpo))
+                .andExpect(status().isCreated())
+                .andExpect(jsonPath("$.descricao").value(descricaoComTamanho(2000)));
+    }
+
+    @Test
+    void deveRejeitarDescricaoComMaisDe2000CaracteresAoCriar() throws Exception {
+        String corpo = """
+                {"numeroProcesso":"0001234-56.2026.8.26.0100","descricao":"%s","dataPrazo":"%s"}
+                """.formatted(descricaoComTamanho(2001), LocalDate.now().plusDays(30));
+
+        mockMvc.perform(post("/prazos").contentType(MediaType.APPLICATION_JSON).content(corpo))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.fieldErrors[*].field").value(hasItem("descricao")));
     }
 
     @Test
@@ -115,6 +158,35 @@ class PrazoControllerTest {
     }
 
     @Test
+    void deveAceitarDescricaoCom2000CaracteresAoAtualizar() throws Exception {
+        Prazo prazo = repository.save(
+                new Prazo("0001234-56.2026.8.26.0100", "Contestacao", LocalDate.now().plusDays(10)));
+        String descricao = descricaoComTamanho(2000);
+        String corpo = """
+                {"descricao":"%s","dataPrazo":"%s","version":%d}
+                """.formatted(descricao, LocalDate.now().plusDays(20), prazo.getVersion());
+
+        mockMvc.perform(put("/prazos/{id}", prazo.getId())
+                        .contentType(MediaType.APPLICATION_JSON).content(corpo))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.descricao").value(descricao));
+    }
+
+    @Test
+    void deveRejeitarDescricaoComMaisDe2000CaracteresAoAtualizar() throws Exception {
+        Prazo prazo = repository.save(
+                new Prazo("0001234-56.2026.8.26.0100", "Contestacao", LocalDate.now().plusDays(10)));
+        String corpo = """
+                {"descricao":"%s","dataPrazo":"%s","version":%d}
+                """.formatted(descricaoComTamanho(2001), LocalDate.now().plusDays(20), prazo.getVersion());
+
+        mockMvc.perform(put("/prazos/{id}", prazo.getId())
+                        .contentType(MediaType.APPLICATION_JSON).content(corpo))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.fieldErrors[*].field").value(hasItem("descricao")));
+    }
+
+    @Test
     void deveRejeitarAtualizacaoComVersaoDesatualizadaCom409() throws Exception {
         Prazo prazo = repository.save(
                 new Prazo("0001234-56.2026.8.26.0100", "Contestacao", LocalDate.now().plusDays(10)));
@@ -134,5 +206,9 @@ class PrazoControllerTest {
                         .contentType(MediaType.APPLICATION_JSON).content(corpo))
                 .andExpect(status().isConflict())
                 .andExpect(jsonPath("$.status").value(409));
+    }
+
+    private String descricaoComTamanho(int tamanho) {
+        return "a".repeat(tamanho);
     }
 }

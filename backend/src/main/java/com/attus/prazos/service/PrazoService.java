@@ -27,7 +27,7 @@ public class PrazoService {
         Prazo prazo = new Prazo(numeroProcesso, descricao, dataPrazo);
         Prazo novoPrazo = repository.save(prazo);
         log.info("Prazo criado id={} numeroProcesso={} dataPrazo={}",
-                novoPrazo.getId(), numeroProcesso, dataPrazo);
+                novoPrazo.getId(), novoPrazo.getNumeroProcesso(), dataPrazo);
         return novoPrazo;
     }
 

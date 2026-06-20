@@ -54,6 +54,12 @@ aplicação. Sob concorrência, checar com um `SELECT` antes do `INSERT` tem con
 duas requisições passam pela checagem antes de qualquer uma gravar. Só a constraint garante a
 regra de verdade.
 
+Como `descricao` aceita texto livre maior, ela não entra diretamente no índice único. A entidade
+mantém um `descricao_hash` SHA-256 e a constraint usa `(numero_processo, descricao_hash,
+data_prazo)`. Assim preservamos a regra de duplicidade sem indexar o `text` inteiro no
+PostgreSQL. O número do processo também é normalizado para dígitos antes de persistir, evitando
+duplicidade entre valores com e sem máscara.
+
 ## Concorrência otimista na edição
 
 A edição usa trava otimista. A entidade tem `@Version` e o `PUT` exige a `version` que o cliente
@@ -75,7 +81,8 @@ só configuração de datasource (é o que o profile `docker` faz).
 ## O que faria depois
 
 - Migrações versionadas (Flyway ou Liquibase). Hoje o schema é gerado pelo Hibernate
-  (`ddl-auto`); em produção isso precisa ser versionado e auditável.
+  (`ddl-auto`) e o profile Docker tem um script idempotente para ajustes do PostgreSQL; em
+  produção isso precisa ser versionado e auditável.
 - Idempotency key no `POST /prazos`, para um retry de rede devolver o recurso já criado em vez
   de 409.
 - ETag e `If-Match` na edição, levando a concorrência otimista para os cabeçalhos HTTP em vez de

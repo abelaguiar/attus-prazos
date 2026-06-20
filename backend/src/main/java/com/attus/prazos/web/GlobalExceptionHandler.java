@@ -23,7 +23,7 @@ public class GlobalExceptionHandler {
 
     private static final Logger log = LoggerFactory.getLogger(GlobalExceptionHandler.class);
 
-    private static final String UK_PRAZO_DUPLICADO = "uk_prazo_processo_descricao_data";
+    private static final String UK_PRAZO_DUPLICADO = "uk_prazo_processo_descricao_hash_data";
 
     @ExceptionHandler(PrazoNaoEncontradoException.class)
     @ResponseStatus(HttpStatus.NOT_FOUND)
