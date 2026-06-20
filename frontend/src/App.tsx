@@ -56,6 +56,9 @@ export default function App() {
     await recarregarPrazos();
   }
 
+  // Esconde a lista enquanto carrega e quando o erro inicial impede ter qualquer dado a mostrar.
+  const mostrarLista = !carregando && !(erro && prazos.length === 0);
+
   return (
     <>
       <header className="app-header">
@@ -82,7 +85,7 @@ export default function App() {
         <h2>Prazos</h2>
         {carregando && <p>Carregando...</p>}
         {erro && <p className="erro-geral">{erro}</p>}
-        {!carregando && !(erro && prazos.length === 0) && (
+        {mostrarLista && (
           <PrazoList prazos={prazos} onCumprir={handleCumprir} onEditar={handleEditar} />
         )}
       </section>

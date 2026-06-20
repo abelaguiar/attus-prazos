@@ -13,10 +13,39 @@ export class ApiException extends Error {
 
 async function handleResponse<T>(response: Response): Promise<T> {
   if (!response.ok) {
-    const body = (await response.json()) as ApiError;
-    throw new ApiException(body);
+    throw new ApiException(await lerErro(response));
   }
   return (await response.json()) as T;
+}
+
+/** Lê o corpo de erro como ApiError; se não vier JSON (ex.: 500 com HTML), monta um equivalente. */
+async function lerErro(response: Response): Promise<ApiError> {
+  try {
+    return (await response.json()) as ApiError;
+  } catch {
+    return {
+      timestamp: new Date().toISOString(),
+      status: response.status,
+      error: response.statusText,
+      message: 'Erro inesperado ao comunicar com o servidor.',
+      path: '',
+      fieldErrors: [],
+    };
+  }
+}
+
+/**
+ * Converte um erro de API no mapa { campo: mensagem } usado pelos formulários.
+ * Erros sem campo específico (ex.: 409 duplicado) e falhas de rede caem em `geral`.
+ */
+export function mapearErrosDeCampo(err: unknown): Record<string, string> {
+  if (err instanceof ApiException) {
+    if (err.apiError.fieldErrors.length > 0) {
+      return Object.fromEntries(err.apiError.fieldErrors.map((fe) => [fe.field, fe.message]));
+    }
+    return { geral: err.apiError.message };
+  }
+  return { geral: 'Não foi possível salvar. O back-end está rodando?' };
 }
 
 export function listarPrazos(): Promise<Prazo[]> {
